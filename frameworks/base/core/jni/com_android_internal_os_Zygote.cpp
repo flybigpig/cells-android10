@@ -1396,7 +1396,7 @@ static jint com_android_internal_os_Zygote_nativeForkSystemServer(
     fds_to_close.push_back(gUsapPoolEventFD);
     fds_to_ignore.push_back(gUsapPoolEventFD);
   }
-
+  //  pid_t pid = fork();
   pid_t pid = ForkCommon(env, true,
                          fds_to_close,
                          fds_to_ignore);

@@ -348,6 +348,7 @@ public final class Zygote {
         return pid;
     }
 
+    // com_android_internal_os_Zygote_nativeForkSystemServer(
     private static native int nativeForkSystemServer(int uid, int gid, int[] gids, int runtimeFlags,
             int[][] rlimits, long permittedCapabilities, long effectiveCapabilities);
 

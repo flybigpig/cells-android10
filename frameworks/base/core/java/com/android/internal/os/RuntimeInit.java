@@ -316,6 +316,7 @@ public class RuntimeInit {
          * clears up all the stack frames that were required in setting
          * up the process.
          */
+        // systemserver.main
         return new MethodAndArgsCaller(m, argv);
     }
 

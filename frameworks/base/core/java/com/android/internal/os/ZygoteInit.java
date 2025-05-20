@@ -526,6 +526,7 @@ public class ZygoteInit {
 
             throw new IllegalStateException("Unexpected return from WrapperInit.execApplication");
         } else {
+            //
             createSystemServerClassLoader();
             ClassLoader cl = sCachedSystemServerClassLoader;
             if (cl != null) {
@@ -793,8 +794,9 @@ public class ZygoteInit {
             if (hasSecondZygote(abiList)) {
                 waitForSecondaryZygote(socketName);
             }
-
+            // 关闭子进程 fork 的 ServerSocket
             zygoteServer.closeServerSocket();
+            // 处理子进程
             return handleSystemServerProcess(parsedArgs);
         }
 
@@ -980,6 +982,7 @@ public class ZygoteInit {
 
         RuntimeInit.commonInit();
         ZygoteInit.nativeZygoteInit();
+        // 子进程   systemserver.main
         return RuntimeInit.applicationInit(targetSdkVersion, argv, classLoader);
     }
 

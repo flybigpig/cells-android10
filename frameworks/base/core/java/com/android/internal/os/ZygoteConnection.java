@@ -595,7 +595,7 @@ class ZygoteConnection {
             // Should not get here.
             throw new IllegalStateException("WrapperInit.execApplication unexpectedly returned");
         } else {
-            if (!isZygote) {
+            if (!isZygote) {  {//此时看客户端是否传递--start-child-zygote
                 return ZygoteInit.zygoteInit(parsedArgs.mTargetSdkVersion,
                         parsedArgs.mRemainingArgs, null /* classLoader */);
             } else {

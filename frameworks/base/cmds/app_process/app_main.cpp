@@ -89,9 +89,11 @@ public:
         hardware::IPCThreadState::self()->stopProcess();
     }
 
+    // gCurRuntime->onZygoteInit();
     virtual void onZygoteInit()
     {
         sp<ProcessState> proc = ProcessState::self();
+        // 开启线程池
         ALOGV("App process: starting thread pool.\n");
         proc->startThreadPool();
     }

@@ -93,12 +93,17 @@ struct binder_state
     void *mapped;
     size_t mapsize;
 };
-
+/**
+ *
+ * @param driver
+ * @param mapsize
+ * @return
+ */
 struct binder_state *binder_open(const char* driver, size_t mapsize)
 {
     struct binder_state *bs;
     struct binder_version vers;
-
+    // allocate the binder
     bs = malloc(sizeof(*bs));
     if (!bs) {
         errno = ENOMEM;
@@ -121,6 +126,7 @@ struct binder_state *binder_open(const char* driver, size_t mapsize)
     }
 
     bs->mapsize = mapsize;
+    // mmap the binder driver
     bs->mapped = mmap(NULL, mapsize, PROT_READ, MAP_PRIVATE, bs->fd, 0);
     if (bs->mapped == MAP_FAILED) {
         fprintf(stderr,"binder: cannot map device (%s)\n",
@@ -226,6 +232,16 @@ void binder_send_reply(struct binder_state *bs,
     binder_write(bs, &data, sizeof(data));
 }
 
+/**
+ *  binder_parse
+ *
+ * @param bs
+ * @param bio
+ * @param ptr
+ * @param size
+ * @param func
+ * @return
+ */
 int binder_parse(struct binder_state *bs, struct binder_io *bio,
                  uintptr_t ptr, size_t size, binder_handler func)
 {
@@ -254,6 +270,7 @@ int binder_parse(struct binder_state *bs, struct binder_io *bio,
             break;
         case BR_TRANSACTION_SEC_CTX:
         case BR_TRANSACTION: {
+            // data_transaction
             struct binder_transaction_data_secctx txn;
             if (cmd == BR_TRANSACTION_SEC_CTX) {
                 if ((end - ptr) < sizeof(struct binder_transaction_data_secctx)) {
@@ -411,7 +428,12 @@ fail:
     reply->flags |= BIO_F_IOERROR;
     return -1;
 }
-
+/**
+ * binder_loop
+ *
+ * @param bs
+ * @param func
+ */
 void binder_loop(struct binder_state *bs, binder_handler func)
 {
     int res;

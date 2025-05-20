@@ -378,7 +378,12 @@ static int audit_callback(void *data, __unused security_class_t cls, char *buf, 
     snprintf(buf, len, "service=%s pid=%d uid=%d", ad->name, ad->pid, ad->uid);
     return 0;
 }
-
+/**
+ * main  binder_open  - binder_become_context_manager  -  binder_loop
+ * @param argc
+ * @param argv
+ * @return
+ */
 int main(int argc, char** argv)
 {
     struct binder_state *bs;

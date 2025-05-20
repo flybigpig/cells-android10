@@ -4,14 +4,7 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="zygote init update">
-      <change beforePath="$PROJECT_DIR$/frameworks/base/cmds/app_process/app_main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/cmds/app_process/app_main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/RuntimeInit.java" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/RuntimeInit.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/Zygote.java" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/Zygote.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/ZygoteConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/ZygoteConnection.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/ZygoteInit.java" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/ZygoteInit.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/base/core/jni/com_android_internal_os_Zygote.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/core/jni/com_android_internal_os_Zygote.cpp" afterDir="false" />
-    </list>
+    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="zygote (runSelectLoop)-&gt; systemserver" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -91,7 +84,14 @@
       <option name="project" value="LOCAL" />
       <updated>1747728123622</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="zygote (runSelectLoop)-&gt; systemserver">
+      <created>1747730344479</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1747730344479</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -111,6 +111,7 @@
     <MESSAGE value="update" />
     <MESSAGE value="init -&gt;service-&gt;zygote update" />
     <MESSAGE value="zygote init update" />
-    <option name="LAST_COMMIT_MESSAGE" value="zygote init update" />
+    <MESSAGE value="zygote (runSelectLoop)-&gt; systemserver" />
+    <option name="LAST_COMMIT_MESSAGE" value="zygote (runSelectLoop)-&gt; systemserver" />
   </component>
 </project>

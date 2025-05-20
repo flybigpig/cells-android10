@@ -103,7 +103,7 @@ static void ForEachServiceInClass(const std::string& classname, F function) {
         if (service->classnames().count(classname)) std::invoke(function, service);
     }
 }
-
+// action map映射方法
 static Result<Success> do_class_start(const BuiltinArguments& args) {
     // Do not start a class if it has a property persist.dont_start_class.CLASS set to 1.
     if (android::base::GetBoolProperty("persist.init.dont_start_class." + args[1], false))
@@ -112,6 +112,7 @@ static Result<Success> do_class_start(const BuiltinArguments& args) {
     // They must  be started individually.
     for (const auto& service : ServiceList::GetInstance()) {
         if (service->classnames().count(args[1])) {
+
             if (auto result = service->StartIfNotDisabled(); !result) {
                 LOG(ERROR) << "Could not start service '" << service->name()
                            << "' as part of class '" << args[1] << "': " << result.error();

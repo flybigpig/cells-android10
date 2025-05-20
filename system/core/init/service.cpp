@@ -204,7 +204,7 @@ static bool ExpandArgsAndExecv(const std::vector<std::string>& args, bool sigsto
     if (sigstop) {
         kill(getpid(), SIGSTOP);
     }
-
+    // 会从这里启动zygote.app_main.cpp
     return execv(c_strings[0], c_strings.data()) == 0;
 }
 
@@ -1055,6 +1055,7 @@ Result<Success> Service::Start() {
         // priority. Aborts on failure.
         SetProcessAttributes();
 
+        // 执行
         if (!ExpandArgsAndExecv(args_, sigstop_)) {
             PLOG(ERROR) << "cannot execve('" << args_[0] << "')";
         }
@@ -1455,7 +1456,7 @@ Result<Success> ServiceParser::EndSection() {
             service_list_->RemoveService(*old_service);
             old_service = nullptr;
         }
-
+        // 添加到service list
         service_list_->AddService(std::move(service_));
     }
 

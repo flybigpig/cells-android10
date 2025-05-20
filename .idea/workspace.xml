@@ -4,7 +4,13 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="zygote (runSelectLoop)-&gt; systemserver" />
+    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="zygote (runSelectLoop)-&gt; systemserver">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/system/core/init/builtins.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/system/core/init/builtins.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/system/core/init/init.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/system/core/init/init.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/system/core/init/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/system/core/init/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/system/core/init/service.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/system/core/init/service.cpp" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
         if (!strcmp(argv[1], "selinux_setup")) {
             return SetupSelinux(argv);
         }
-
+        // 核心
         if (!strcmp(argv[1], "second_stage")) {
             return SecondStageMain(argc, argv);
         }

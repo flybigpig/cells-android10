@@ -694,6 +694,7 @@ int SecondStageMain(int argc, char** argv) {
         PLOG(FATAL) << result.error();
     }
 
+    // 注册epoll
     InstallSignalFdHandler(&epoll);
 
     property_load_boot_defaults(load_debug_prop);
@@ -716,6 +717,7 @@ int SecondStageMain(int argc, char** argv) {
     ActionManager& am = ActionManager::GetInstance();
     ServiceList& sm = ServiceList::GetInstance();
 
+    // 解析init.rc
     LoadBootScripts(am, sm);
 
     // Turning this on and letting the INFO logging be discarded adds 0.2s to

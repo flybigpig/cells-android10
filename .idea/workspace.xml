@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="zygote init update">
+      <change beforePath="$PROJECT_DIR$/frameworks/base/cmds/app_process/app_main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/cmds/app_process/app_main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/RuntimeInit.java" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/RuntimeInit.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/Zygote.java" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/Zygote.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/ZygoteConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/ZygoteConnection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/ZygoteInit.java" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/ZygoteInit.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/base/core/jni/com_android_internal_os_Zygote.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/core/jni/com_android_internal_os_Zygote.cpp" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2xLhJeMH6fvyhroItYg0oY8X8Th" />
+  <component name="ProjectViewState">
+    <option name="compactDirectories" value="true" />
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="false" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/bugly/cells-android10&quot;,
+    &quot;structure.view.defaults.are.configured&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="" />
+      <created>1747723202397</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1747723202397</updated>
+    </task>
+    <task id="LOCAL-00001" summary="init">
+      <created>1747723841375</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1747723841375</updated>
+    </task>
+    <task id="LOCAL-00002" summary="init update">
+      <created>1747724830851</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1747724830851</updated>
+    </task>
+    <task id="LOCAL-00003" summary="init update">
+      <created>1747725664184</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1747725664184</updated>
+    </task>
+    <task id="LOCAL-00004" summary="update">
+      <created>1747725748287</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1747725748287</updated>
+    </task>
+    <task id="LOCAL-00005" summary="init -&gt;service-&gt;zygote update">
+      <created>1747727736093</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1747727736093</updated>
+    </task>
+    <task id="LOCAL-00006" summary="zygote init update">
+      <created>1747728123622</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1747728123622</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
+    <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="init" />
+    <MESSAGE value="init update" />
+    <MESSAGE value="update" />
+    <MESSAGE value="init -&gt;service-&gt;zygote update" />
+    <MESSAGE value="zygote init update" />
+    <option name="LAST_COMMIT_MESSAGE" value="zygote init update" />
+  </component>
+</project>

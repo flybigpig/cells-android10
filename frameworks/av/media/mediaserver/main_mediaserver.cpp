@@ -31,18 +31,26 @@
 
 using namespace android;
 
-int main(int argc __unused, char **argv __unused)
-{
+int main(int argc __unused, char **argv __unused) {
     OtherSystemServiceLoopRun();
     signal(SIGPIPE, SIG_IGN);
 
-    sp<ProcessState> proc(ProcessState::self());
-    sp<IServiceManager> sm(defaultServiceManager());
+
+    sp <ProcessState> proc(ProcessState::self());
+
+    sp <IServiceManager> sm(defaultServiceManager());
+
     ALOGI("ServiceManager: %p", sm.get());
+
     AIcu_initializeIcuOrDie();
+
     MediaPlayerService::instantiate();
+
     ResourceManagerService::instantiate();
+
     registerExtensions();
+
     ProcessState::self()->startThreadPool();
+
     IPCThreadState::self()->joinThreadPool();
 }

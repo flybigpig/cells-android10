@@ -6348,7 +6348,9 @@ static int binder_transaction_log_show(struct seq_file *m, void *unused) {
     }
     return 0;
 }
-
+/**
+ * 函数关系
+ */
 static const struct file_operations binder_fops = {
         .owner = THIS_MODULE,
         .poll = binder_poll,

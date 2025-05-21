@@ -4,11 +4,9 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="init">
-      <change afterPath="$PROJECT_DIR$/kernel/drivers/android/binder.md" afterDir="false" />
+    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="processstate.binder">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/base/cmds/app_process/app_main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/cmds/app_process/app_main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/libs/binder/ProcessState.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/libs/binder/ProcessState.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kernel/drivers/android/binder.c" beforeDir="false" afterPath="$PROJECT_DIR$/kernel/drivers/android/binder.c" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -118,7 +116,14 @@
       <option name="project" value="LOCAL" />
       <updated>1747735121632</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="processstate.binder">
+      <created>1747791293258</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1747791293258</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -139,6 +144,7 @@
     <MESSAGE value="zygote init update" />
     <MESSAGE value="zygote (runSelectLoop)-&gt; systemserver" />
     <MESSAGE value="init" />
-    <option name="LAST_COMMIT_MESSAGE" value="init" />
+    <MESSAGE value="processstate.binder" />
+    <option name="LAST_COMMIT_MESSAGE" value="processstate.binder" />
   </component>
 </project>

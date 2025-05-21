@@ -406,7 +406,11 @@ void ProcessState::giveThreadPoolName() {
 String8 ProcessState::getDriverName() {
     return mDriverName;
 }
-
+/**
+ *  ProcessState.open_driver
+ *   result = ioctl(fd, BINDER_SET_MAX_THREADS, &maxThreads);
+ * @return
+ */
 static int open_driver(const char *driver)
 {
     int fd = open(driver, O_RDWR | O_CLOEXEC);

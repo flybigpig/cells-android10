@@ -92,6 +92,7 @@ public:
     // gCurRuntime->onZygoteInit();
     virtual void onZygoteInit()
     {
+        //open binder
         sp<ProcessState> proc = ProcessState::self();
         // 开启线程池
         ALOGV("App process: starting thread pool.\n");

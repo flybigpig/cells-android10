@@ -4,10 +4,11 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="zygote (runSelectLoop)-&gt; systemserver">
+    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="init">
+      <change afterPath="$PROJECT_DIR$/kernel/drivers/android/binder.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/cmds/servicemanager/binder.c" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/cmds/servicemanager/binder.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/cmds/servicemanager/service_manager.c" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/cmds/servicemanager/service_manager.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/base/cmds/app_process/app_main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/cmds/app_process/app_main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/native/libs/binder/ProcessState.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/libs/binder/ProcessState.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -36,21 +37,22 @@
     <option name="showExcludedFiles" value="false" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/bugly/cells-android10&quot;,
-    &quot;structure.view.defaults.are.configured&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "master",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "D:/bugly/cells-android10",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "structure.view.defaults.are.configured": "true"
   }
-}</component>
+}]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -109,7 +111,14 @@
       <option name="project" value="LOCAL" />
       <updated>1747730344479</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="init">
+      <created>1747735121632</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1747735121632</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -124,12 +133,12 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="init" />
     <MESSAGE value="init update" />
     <MESSAGE value="update" />
     <MESSAGE value="init -&gt;service-&gt;zygote update" />
     <MESSAGE value="zygote init update" />
     <MESSAGE value="zygote (runSelectLoop)-&gt; systemserver" />
-    <option name="LAST_COMMIT_MESSAGE" value="zygote (runSelectLoop)-&gt; systemserver" />
+    <MESSAGE value="init" />
+    <option name="LAST_COMMIT_MESSAGE" value="init" />
   </component>
 </project>

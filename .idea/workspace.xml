@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="processstate.binder">
+    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="binder struct">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kernel/drivers/android/binder.c" beforeDir="false" afterPath="$PROJECT_DIR$/kernel/drivers/android/binder.c" afterDir="false" />
     </list>
@@ -123,7 +123,14 @@
       <option name="project" value="LOCAL" />
       <updated>1747791293258</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="binder struct">
+      <created>1747804417442</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1747804417443</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -145,6 +152,7 @@
     <MESSAGE value="zygote (runSelectLoop)-&gt; systemserver" />
     <MESSAGE value="init" />
     <MESSAGE value="processstate.binder" />
-    <option name="LAST_COMMIT_MESSAGE" value="processstate.binder" />
+    <MESSAGE value="binder struct" />
+    <option name="LAST_COMMIT_MESSAGE" value="binder struct" />
   </component>
 </project>

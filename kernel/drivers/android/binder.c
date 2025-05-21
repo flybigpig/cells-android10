@@ -439,21 +439,36 @@ struct binder_error {
  * Bookkeeping structure for binder nodes.
  */
 struct binder_node {
-    int debug_id;  // 唯一标示该node的id，用于调试
+    /**
+     * 唯一标示该node的id，用于调试
+     */
+    int debug_id;
     spinlock_t lock;
     struct binder_work work;
     union {
-        struct rb_node rb_node;  // 一个binder proc可能有多个service组件（提供多种服务），属于一个binder proc的binder node会挂入binder proc的红黑树，这个成员是嵌入红黑树的节点。
-        struct hlist_node dead_node; // 该binder node所属的binder proc
+        /**
+         *  一个binder proc可能有多个service组件（提供多种服务），属于一个binder proc的binder node会挂入binder proc的红黑树，这个成员是嵌入红黑树的节点。
+         */
+        struct rb_node rb_node;
+        /**
+         * 该binder node所属的binder proc
+         */
+        struct hlist_node dead_node;
     };
     struct binder_proc *proc;
-    struct hlist_head refs; // 一个service组件可能会有多个client发起服务请求，也就是说每一个client都是对binder node的一次引用，这个成员是就是保存binder ref的哈希表
+    /**
+     * 一个service组件可能会有多个client发起服务请求，也就是说每一个client都是对binder node的一次引用，这个成员是就是保存binder ref的哈希表
+     */
+    struct hlist_head refs;
     int internal_strong_refs;
     int local_weak_refs;
     int local_strong_refs;
     int tmp_refs;
     binder_uintptr_t ptr;
-    binder_uintptr_t cookie; // 指向用户空间service组件相关的信息
+    /**
+     * 指向用户空间service组件相关的信息
+     */
+    binder_uintptr_t cookie;
     struct {
         /*
 		 * bitfield elements protected by
@@ -465,7 +480,7 @@ struct binder_node {
         u8 pending_weak_ref: 1;
     };
     struct {
-        /*
+        /**
 		 * invariant after initialization  这些属性定义了该service组件在处理transaction的时候优先级的设定。
 		 */
         u8 sched_policy: 2;
@@ -474,8 +489,14 @@ struct binder_node {
         u8 txn_security_ctx: 1;
         u8 min_priority;
     };
-    bool has_async_transaction; // 是否有异步通信需要处理
-    struct list_head async_todo; //异步binder通信的队列
+    /**
+     *  是否有异步通信需要处理
+     */
+    bool has_async_transaction;
+    /**
+     * 异步binder通信的队列
+     */
+    struct list_head async_todo;
 };
 
 struct binder_ref_death {
@@ -618,31 +639,70 @@ struct binder_priority {
  * Bookkeeping structure for binder processes
  */
 struct binder_proc {
-    struct hlist_node proc_node;  // 系统中的所有binder proc挂入binder_procs的链表中，这个成员是挂入全局binder_procs的链表的节点
-    struct rb_root threads;   // 使用红黑树来保存使用Binder机制通信的进程的Binder线程池的线程ID
-    struct rb_root nodes;  //  使用红黑树来保存使用Binder机制通信的进程内所有Binder实体对象binder_node的成员变量ptr
-    struct rb_root refs_by_desc; // 使用红黑树来保存使用Binder机制通信的进程内所有Binder引用对象binder_ref的成员变量desc
-    struct rb_root refs_by_node; // 使用红黑树来保存使用Binder机制通信的进程内所有Binder引用对象binder_ref的成员变量node
-    struct list_head waiting_threads;  // 该binder进程的线程池中等待处理binder work的binder thread链表
-    int pid;   // 保存使用Binder机制通信的进程内的pid
-    struct task_struct *tsk;  //保存使用Binder机制通信的进程信息 - 指向该binder进程对应的进程描述符（指向thread group leader对应的task struct）
-    struct files_struct *files;  // //打开文件结构体
+    /**
+     * 系统中的所有binder proc挂入binder_procs的链表中，这个成员是挂入全局binder_procs的链表的节点
+     */
+    struct hlist_node proc_node;
+    /**
+     * 使用红黑树来保存使用Binder机制通信的进程的Binder线程池的线程ID
+     */
+    struct rb_root threads;
+    /**
+     * 使用红黑树来保存使用Binder机制通信的进程内所有Binder实体对象binder_node的成员变量ptr
+     */
+    struct rb_root nodes;  //
+    /**
+     * 使用红黑树来保存使用Binder机制通信的进程内所有Binder引用对象binder_ref的成员变量desc
+     */
+    struct rb_root refs_by_desc;
+    /**
+     *  使用红黑树来保存使用Binder机制通信的进程内所有Binder引用对象binder_ref的成员变量node
+     */
+    struct rb_root refs_by_node;
+    /**
+     *  该binder进程的线程池中等待处理binder work的binder thread链表
+     */
+    struct list_head waiting_threads;
+    /**
+     * 保存使用Binder机制通信的进程内的pid
+     */
+    int pid;
+    /**
+     * 保存使用Binder机制通信的进程信息 - 指向该binder进程对应的进程描述符（指向thread group leader对应的task struct）
+     */
+    struct task_struct *tsk;
+    /**
+     * 打开文件结构体
+     */
+    struct files_struct *files;
     struct mutex files_lock;
     struct hlist_node deferred_work_node;
     int deferred_work;
     bool is_dead;
 
-    struct list_head todo;  // 需要该binder进程处理的binder work链表
+    /**
+     * 需要该binder进程处理的binder work链表
+     */
+    struct list_head todo;  /
     struct binder_stats stats;
     struct list_head delivered_death;
-    int max_threads;  // 线程池中运行的最大数目
+    /**
+     * 线程池中运行的最大数目
+     */
+    int max_threads;
     int requested_threads;
     int requested_threads_started;
     atomic_t tmp_ref;
     struct binder_priority default_priority;
     struct dentry *debugfs_entry;
-    struct binder_alloc alloc;  // 管理binder 内存分配的数据结构
-    struct binder_context *context;  // 保存binder上下文管理者的信息。通过binder context可以找到service manager对应的bind node。
+    /**
+     * 管理binder 内存分配的数据结构
+     */
+    struct binder_alloc alloc;
+    /**
+     * 保存binder上下文管理者的信息。通过binder context可以找到service manager对应的bind node。
+     */
+    struct binder_context *context;
 #ifdef CONFIG_DRV_NS
     struct binder_context *acontext[MAX_CONTEXT];
 #endif
@@ -697,14 +757,32 @@ enum {
  * Bookkeeping structure for binder threads.
  */
 struct binder_thread {
-    struct binder_proc *proc; // 该binder thread所属的binder proc
-    struct rb_node rb_node;  // 挂入binder proc红黑树的节点
-    struct list_head waiting_thread_node;  // 无事可做的时候，binder thread会挂入binder proc的等待队列
-    int pid;   // Thread id
+    /**
+     * 该binder thread所属的binder proc
+     */
+    struct binder_proc *proc;
+    /**
+     * 挂入binder proc红黑树的节点
+     */
+    struct rb_node rb_node;
+    /**
+     * 无事可做的时候，binder thread会挂入binder proc的等待队列
+     */
+    struct list_head waiting_thread_node;
+    /**
+     * Thread id
+     */
+    int pid;
     int looper;              /* only modified by this thread */
     bool looper_need_return; /* can be written by other thread */
-    struct binder_transaction *transaction_stack;  // 该binder thread正在处理的transaction
-    struct list_head todo; // 需要该binder线程处理的binder work链表
+    /**
+     * 该binder thread正在处理的transaction
+     */
+    struct binder_transaction *transaction_stack;
+    /**
+     * 需要该binder线程处理的binder work链表
+     */
+    struct list_head todo;
     bool process_todo;
     struct binder_error return_error;
     struct binder_error reply_error;
@@ -712,7 +790,10 @@ struct binder_thread {
     struct binder_stats stats;
     atomic_t tmp_ref;
     bool is_dead;
-    struct task_struct *task;  // 该binder thread对应的进程描述符
+    /**
+     * 该binder thread对应的进程描述符
+     */
+    struct task_struct *task;
 };
 
 struct binder_transaction {

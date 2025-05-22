@@ -663,10 +663,10 @@ int binder_alloc_mmap_handler(struct binder_alloc *alloc,
 		failure_string = "already mapped";
 		goto err_already_mapped;
 	}
-
+	// 映射存储用户空间的地址
 	alloc->buffer = (void __user *)vma->vm_start;
 	mutex_unlock(&binder_alloc_mmap_lock);
-
+	// 分配页表数组
 	alloc->pages = kzalloc(sizeof(alloc->pages[0]) *
 				   ((vma->vm_end - vma->vm_start) / PAGE_SIZE),
 			       GFP_KERNEL);
@@ -675,8 +675,10 @@ int binder_alloc_mmap_handler(struct binder_alloc *alloc,
 		failure_string = "alloc page array";
 		goto err_alloc_pages_failed;
 	}
+	//  映射大小
 	alloc->buffer_size = vma->vm_end - vma->vm_start;
 
+	//  创建并初始化缓冲区
 	buffer = kzalloc(sizeof(*buffer), GFP_KERNEL);
 	if (!buffer) {
 		ret = -ENOMEM;
@@ -684,6 +686,7 @@ int binder_alloc_mmap_handler(struct binder_alloc *alloc,
 		goto err_alloc_buf_struct_failed;
 	}
 
+	// 缓存区指向用户空间地址
 	buffer->user_data = alloc->buffer;
 	list_add(&buffer->entry, &alloc->buffers);
 	buffer->free = 1;

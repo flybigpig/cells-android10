@@ -3532,7 +3532,7 @@ static void binder_transaction(struct binder_proc *proc,
             t->buffer, 0,
             (
         const void __user
-    *)
+        *)
     (uintptr_t) tr->data.ptr.buffer,
             tr->data_size)) {
         binder_user_error("%d:%d got transaction with invalid data ptr\n",
@@ -3548,7 +3548,7 @@ static void binder_transaction(struct binder_proc *proc,
             ALIGN(tr->data_size, sizeof(void *)),
             (
         const void __user
-    *)
+        *)
     (uintptr_t) tr->data.ptr.offsets,
             tr->offsets_size)) {
         binder_user_error("%d:%d got transaction with invalid offsets ptr\n",
@@ -3731,7 +3731,7 @@ static void binder_transaction(struct binder_proc *proc,
                         sg_buf_offset,
                         (
                     const void __user
-                *)
+                    *)
                 (uintptr_t) bp->buffer,
                         bp->length)) {
                     binder_user_error("%d:%d got transaction with invalid offsets ptr\n",
@@ -4584,7 +4584,7 @@ static int binder_thread_read(struct binder_proc *proc,
                 break;
             case BINDER_WORK_RETURN_ERROR: {
                 struct binder_error *e = container_of(
-                w,
+                        w,
                 struct binder_error, work);
 
                 WARN_ON(e->cmd == BR_OK);
@@ -4891,7 +4891,7 @@ static void binder_release_work(struct binder_proc *proc,
                 break;
             case BINDER_WORK_RETURN_ERROR: {
                 struct binder_error *e = container_of(
-                w,
+                        w,
                 struct binder_error, work);
 
                 binder_debug(BINDER_DEBUG_DEAD_TRANSACTION,
@@ -5456,9 +5456,15 @@ static const struct vm_operations_struct binder_vm_ops = {
         .fault = binder_vm_fault,
 };
 
-static int binder_mmap(struct file *filp, struct vm_area_struct *vma) {
+/**
+ * 地址映射
+ * @param filp
+ * @param vma
+ * @return
+ */
+static int binder_mmap(struct file *filp, struct vm_area_struct *vma /*用户空间*/) {
     int ret;
-    struct binder_proc *proc = filp->private_data;
+    struct binder_proc *proc = filp->private_data;  // 存储data
     const char *failure_string;
 
     if (proc->tsk != current->group_leader)
@@ -5483,7 +5489,7 @@ static int binder_mmap(struct file *filp, struct vm_area_struct *vma) {
 
     vma->vm_ops = &binder_vm_ops;
     vma->vm_private_data = proc;
-
+    // Binder 驱动通过 binder_alloc_mmap_handler 函数处理映射请求：
     ret = binder_alloc_mmap_handler(&proc->alloc, vma);
     if (ret)
         return ret;
@@ -5881,7 +5887,7 @@ static void print_binder_work_ilocked(struct seq_file *m,
             break;
         case BINDER_WORK_RETURN_ERROR: {
             struct binder_error *e = container_of(
-            w,
+                    w,
             struct binder_error, work);
 
             seq_printf(m, "%stransaction error: %u\n",
@@ -6348,6 +6354,7 @@ static int binder_transaction_log_show(struct seq_file *m, void *unused) {
     }
     return 0;
 }
+
 /**
  * 函数关系
  */

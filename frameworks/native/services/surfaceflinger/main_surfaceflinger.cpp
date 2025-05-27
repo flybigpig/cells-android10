@@ -72,6 +72,10 @@ static status_t startDisplayService() {
     return err;
 }
 
+/**
+ * 主程序启动
+ * @return
+ */
 int main(int, char**) {
     OtherSystemServiceLoopRun();
 

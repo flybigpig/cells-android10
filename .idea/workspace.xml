@@ -4,10 +4,12 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="binder struct">
+    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="SurfaceFlinger">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/drivers/android/binder.c" beforeDir="false" afterPath="$PROJECT_DIR$/kernel/drivers/android/binder.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/drivers/android/binder_alloc.c" beforeDir="false" afterPath="$PROJECT_DIR$/kernel/drivers/android/binder_alloc.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/Scheduler/MessageQueue.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/Scheduler/MessageQueue.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/Scheduler/Scheduler.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/Scheduler/Scheduler.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/main_surfaceflinger.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/main_surfaceflinger.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -139,7 +141,14 @@
       <option name="project" value="LOCAL" />
       <updated>1747811726555</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="binder struct">
+      <created>1747896403170</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1747896403170</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="Vcs.Log.History.Properties">
@@ -172,6 +181,7 @@
     <MESSAGE value="init" />
     <MESSAGE value="processstate.binder" />
     <MESSAGE value="binder struct" />
-    <option name="LAST_COMMIT_MESSAGE" value="binder struct" />
+    <MESSAGE value="SurfaceFlinger" />
+    <option name="LAST_COMMIT_MESSAGE" value="SurfaceFlinger" />
   </component>
 </project>

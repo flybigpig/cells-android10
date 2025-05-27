@@ -407,6 +407,7 @@ SurfaceFlinger::SurfaceFlinger(Factory& factory) : SurfaceFlinger(factory, SkipI
 
 void SurfaceFlinger::onFirstRef()
 {
+    // 消息队列初始化
     mEventQueue->init(this);
 }
 
@@ -610,6 +611,11 @@ void SurfaceFlinger::deleteTextureAsync(uint32_t texture) {
     ATRACE_INT("TexturePoolSize", mTexturePool.size());
 }
 
+/**
+ * 初始化
+ * 注册回调监听
+ *
+ */
 // Do not call property_set on main thread which will be blocked by init
 // Use StartPropertySetThread instead.
 void SurfaceFlinger::init() {
@@ -638,7 +644,9 @@ void SurfaceFlinger::init() {
                                              mInterceptor->saveVSyncEvent(timestamp);
                                          });
 
+    // 注册input事件回调监听 过滤vsync事件
     mEventQueue->setEventConnection(mScheduler->getEventConnection(mSfConnectionHandle));
+
     mVsyncModulator.setSchedulerAndHandles(mScheduler.get(), mAppConnectionHandle.get(),
                                            mSfConnectionHandle.get());
 
@@ -715,11 +723,13 @@ void SurfaceFlinger::init() {
         ALOGE("Run StartPropertySetThread failed!");
     }
 
+    // 回调监听  改变刷新率
     mScheduler->setChangeRefreshRateCallback(
             [this](RefreshRateType type, Scheduler::ConfigEvent event) {
                 Mutex::Autolock lock(mStateLock);
                 setRefreshRateTo(type, event);
             });
+    // 设置当前刷新率
     mScheduler->setGetCurrentRefreshRateTypeCallback([this] {
         Mutex::Autolock lock(mStateLock);
         const auto display = getDefaultDisplayDeviceLocked();
@@ -1272,6 +1282,11 @@ status_t SurfaceFlinger::isWideColorDisplay(const sp<IBinder>& displayToken,
     return NO_ERROR;
 }
 
+/**
+ *  开启垂直同步
+ * @param enable
+ * @return
+ */
 status_t SurfaceFlinger::enableVSyncInjections(bool enable) {
     postMessageSync(new LambdaMessage([&] {
         Mutex::Autolock _l(mStateLock);
@@ -1423,6 +1438,9 @@ sp<IDisplayEventConnection> SurfaceFlinger::createDisplayEventConnection(
 
 // ----------------------------------------------------------------------------
 
+/**
+ * wait message
+ */
 void SurfaceFlinger::waitForEvent() {
     mEventQueue->waitMessage();
 }
@@ -1471,7 +1489,13 @@ nsecs_t SurfaceFlinger::getVsyncPeriod() const {
     const auto config = getHwComposer().getActiveConfig(*displayId);
     return config ? config->getVsyncPeriod() : 0;
 }
-
+/**
+ *
+ *  接收同步vsync消息
+ * @param sequenceId
+ * @param hwcDisplayId
+ * @param timestamp
+ */
 void SurfaceFlinger::onVsyncReceived(int32_t sequenceId, hwc2_display_t hwcDisplayId,
                                      int64_t timestamp) {
     ATRACE_NAME("SF onVsync");
@@ -1712,7 +1736,10 @@ void SurfaceFlinger::populateExpectedPresentTime() NO_THREAD_SAFETY_ANALYSIS {
             ? presentTime
             : presentTime + stats.vsyncPeriod;
 }
-
+/**
+ * 接收 INVALIDATE，REFRESH
+ * @param what
+ */
 void SurfaceFlinger::onMessageReceived(int32_t what) NO_THREAD_SAFETY_ANALYSIS {
     ATRACE_CALL();
     switch (what) {

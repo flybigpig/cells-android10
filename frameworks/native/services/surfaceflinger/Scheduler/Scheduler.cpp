@@ -391,19 +391,28 @@ void Scheduler::updateFpsBasedOnContent() {
     }
     changeRefreshRate(newRefreshRateType, ConfigEvent::Changed);
 }
-
+/**
+ *
+ * @param changeRefreshRateCallback
+ */
 void Scheduler::setChangeRefreshRateCallback(
         const ChangeRefreshRateCallback&& changeRefreshRateCallback) {
     std::lock_guard<std::mutex> lock(mCallbackLock);
     mChangeRefreshRateCallback = changeRefreshRateCallback;
 }
-
+/**
+ *
+ * @param getCurrentRefreshRateTypeCallback
+ */
 void Scheduler::setGetCurrentRefreshRateTypeCallback(
         const GetCurrentRefreshRateTypeCallback&& getCurrentRefreshRateTypeCallback) {
     std::lock_guard<std::mutex> lock(mCallbackLock);
     mGetCurrentRefreshRateTypeCallback = getCurrentRefreshRateTypeCallback;
 }
-
+/**
+ *
+ * @param getVsyncPeriod
+ */
 void Scheduler::setGetVsyncPeriodCallback(const GetVsyncPeriod&& getVsyncPeriod) {
     std::lock_guard<std::mutex> lock(mCallbackLock);
     mGetVsyncPeriod = getVsyncPeriod;

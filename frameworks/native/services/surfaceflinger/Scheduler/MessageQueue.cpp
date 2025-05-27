@@ -58,6 +58,9 @@ void MessageQueue::Handler::dispatchRefresh() {
     }
 }
 
+/**
+ * 分发同步消息
+ */
 void MessageQueue::Handler::dispatchInvalidate() {
     if ((android_atomic_or(eventMaskInvalidate, &mEventMask) & eventMaskInvalidate) == 0) {
         mQueue.mLooper->sendMessage(this, Message(MessageQueue::INVALIDATE));
@@ -78,7 +81,10 @@ void MessageQueue::Handler::handleMessage(const Message& message) {
 }
 
 // ---------------------------------------------------------------------------
-
+/**
+ *
+ * @param flinger
+ */
 void MessageQueue::init(const sp<SurfaceFlinger>& flinger) {
     mFlinger = flinger;
     mLooper = new Looper(true);
@@ -114,6 +120,9 @@ void MessageQueue::setEventConnection(const sp<EventThreadConnection>& connectio
                    this);
 }
 
+/**
+ * messagequeue wait message
+ */
 void MessageQueue::waitMessage() {
     do {
         IPCThreadState::self()->flushCommands();
@@ -164,7 +173,9 @@ int MessageQueue::eventReceiver(int /*fd*/, int /*events*/) {
     DisplayEventReceiver::Event buffer[8];
     while ((n = DisplayEventReceiver::getEvents(&mEventTube, buffer, 8)) > 0) {
         for (int i = 0; i < n; i++) {
+            //  过滤 分发消息-DISPLAY_EVENT_VSYNC
             if (buffer[i].header.type == DisplayEventReceiver::DISPLAY_EVENT_VSYNC) {
+
                 mHandler->dispatchInvalidate();
                 break;
             }

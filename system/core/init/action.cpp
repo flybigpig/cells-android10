@@ -91,6 +91,7 @@ Result<Success> Action::AddCommand(std::vector<std::string>&& args, int line) {
     auto function = function_map_->FindFunction(args);
     if (!function) return Error() << function.error();
 
+    //寻找启动函数
     commands_.emplace_back(function->second, function->first, std::move(args), line);
     return Success();
 }

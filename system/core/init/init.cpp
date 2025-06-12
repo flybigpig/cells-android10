@@ -653,6 +653,7 @@ int SecondStageMain(int argc, char** argv) {
     // Indicate that booting is in progress to background fw loaders, etc.
     close(open("/dev/.booting", O_WRONLY | O_CREAT | O_CLOEXEC, 0000));
 
+    // 属性
     property_init();
 
     // If arguments are passed both on the command line and in DT,

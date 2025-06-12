@@ -213,7 +213,7 @@ void SubcontextProcess::MainLoop() {
 }
 
 }  // namespace
-
+// 这段代码是 Android 系统中 子上下文进程（Subcontext Process） 的入口函数，负责处理特定安全上下文下的系统服务。
 int SubcontextMain(int argc, char** argv, const KeywordFunctionMap* function_map) {
     if (argc < 4) LOG(FATAL) << "Fewer than 4 args specified to subcontext (" << argc << ")";
 
@@ -221,7 +221,7 @@ int SubcontextMain(int argc, char** argv, const KeywordFunctionMap* function_map
     auto init_fd = std::atoi(argv[3]);
 
     SelabelInitialize();
-
+    // // 替换系统属性设置函数为子上下文专用版本，实现属性隔离
     property_set = SubcontextPropertySet;
 
     auto subcontext_process = SubcontextProcess(function_map, context, init_fd);

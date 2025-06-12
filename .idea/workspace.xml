@@ -6,10 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="SurfaceFlinger">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/Scheduler/MessageQueue.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/Scheduler/MessageQueue.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/Scheduler/Scheduler.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/Scheduler/Scheduler.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/main_surfaceflinger.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/main_surfaceflinger.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/system/core/init/action.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/system/core/init/action.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/system/core/init/action_parser.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/system/core/init/action_parser.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/system/core/init/builtins.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/system/core/init/builtins.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/system/core/init/init.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/system/core/init/init.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/system/core/init/subcontext.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/system/core/init/subcontext.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,6 +34,7 @@
   &quot;associatedIndex&quot;: 7
 }</component>
   <component name="ProjectId" id="2xLhJeMH6fvyhroItYg0oY8X8Th" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="compactDirectories" value="true" />
     <option name="hideEmptyMiddlePackages" value="true" />

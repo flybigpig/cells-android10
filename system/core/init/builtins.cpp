@@ -110,6 +110,7 @@ static Result<Success> do_class_start(const BuiltinArguments& args) {
         return Success();
     // Starting a class does not start services which are explicitly disabled.
     // They must  be started individually.
+    // 遍历 启动服务
     for (const auto& service : ServiceList::GetInstance()) {
         if (service->classnames().count(args[1])) {
 

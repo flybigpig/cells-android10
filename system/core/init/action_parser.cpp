@@ -146,6 +146,7 @@ Result<Success> ActionParser::ParseSection(std::vector<std::string>&& args,
 }
 
 Result<Success> ActionParser::ParseLineSection(std::vector<std::string>&& args, int line) {
+    // 添加启动命令
     return action_ ? action_->AddCommand(std::move(args), line) : Success();
 }
 

@@ -72,10 +72,10 @@ import java.security.Security;
 
 /**
  * Startup class for the zygote process.
- *
+ * <p>
  * Pre-initializes some classes, and then waits for commands on a UNIX domain socket. Based on these
  * commands, forks off child processes that inherit the initial state of the VM.
- *
+ * <p>
  * Please see {@link ZygoteArguments} for documentation on the client protocol.
  *
  * @hide
@@ -214,7 +214,7 @@ public class ZygoteInit {
 
     /**
      * Register AndroidKeyStoreProvider and warm up the providers that are already registered.
-     *
+     * <p>
      * By doing it here we avoid that each app does it when requesting a service from the provider
      * for the first time.
      */
@@ -243,7 +243,7 @@ public class ZygoteInit {
 
     /**
      * Performs Zygote process initialization. Loads and initializes commonly used classes.
-     *
+     * <p>
      * Most classes only cause a few hundred bytes to be allocated, but a few will allocate a dozen
      * Kbytes (in one case, 500+K).
      */
@@ -373,15 +373,15 @@ public class ZygoteInit {
 
         ApplicationLoaders.getDefault().createAndCacheNonBootclasspathSystemClassLoaders(
                 new SharedLibraryInfo[]{
-                    // ordered dependencies first
-                    hidlBase,
-                    hidlManager,
+                        // ordered dependencies first
+                        hidlBase,
+                        hidlManager,
                 });
     }
 
     /**
      * Load in commonly used resources, so they can be shared across processes.
-     *
+     * <p>
      * These tend to be a few Kbytes, but are frequently in the 20-40K range, and occasionally even
      * larger.
      */
@@ -602,6 +602,7 @@ public class ZygoteInit {
 
     /**
      * Sets the implementation to be used for logging hidden API accesses
+     *
      * @param logger the implementation of the VMRuntime.HiddenApiUsageLogger interface
      */
     public static void setHiddenApiUsageLogger(VMRuntime.HiddenApiUsageLogger logger) {
@@ -694,7 +695,7 @@ public class ZygoteInit {
     /**
      * Encodes the system server class loader context in a format that is accepted by dexopt. This
      * assumes the system server is always loaded with a {@link dalvik.system.PathClassLoader}.
-     *
+     * <p>
      * Note that ideally we would use the {@code DexoptUtils} to compute this. However we have no
      * dependency here on the server so we hard code the logic again.
      */
@@ -706,7 +707,7 @@ public class ZygoteInit {
      * Encodes the class path in a format accepted by dexopt.
      *
      * @param classPath  The old class path (may be empty).
-     * @param newElement  The new class path elements
+     * @param newElement The new class path elements
      * @return The class path encoding resulted from appending {@code newElement} to {@code
      * classPath}.
      */
@@ -723,7 +724,7 @@ public class ZygoteInit {
      * process; {@code null} in the parent.
      */
     private static Runnable forkSystemServer(String abiList, String socketName,
-            ZygoteServer zygoteServer) {
+                                             ZygoteServer zygoteServer) {
         long capabilities = posixCapabilitiesAsBits(
                 OsConstants.CAP_IPC_LOCK,
                 OsConstants.CAP_KILL,
@@ -845,7 +846,7 @@ public class ZygoteInit {
                     Trace.TRACE_TAG_DALVIK);
             bootTimingsTraceLog.traceBegin("ZygoteInit");
             RuntimeInit.enableDdms();
-
+            // arg = "  --zygote --start-system-server --socket-name=zygote  "
             boolean startSystemServer = false;
             String zygoteSocketName = "zygote";
             String abiList = null;
@@ -935,7 +936,7 @@ public class ZygoteInit {
 
     /**
      * Return {@code true} if this device configuration has another zygote.
-     *
+     * <p>
      * We determine this by comparing the device ABI list with this zygotes list. If this zygote
      * supports all ABIs this device supports, there won't be another zygote.
      */
@@ -962,17 +963,17 @@ public class ZygoteInit {
     /**
      * The main function called when started through the zygote process. This could be unified with
      * main(), if the native code in nativeFinishInit() were rationalized with Zygote startup.<p>
-     *
+     * <p>
      * Current recognized args:
      * <ul>
      *   <li> <code> [--] &lt;start class name&gt;  &lt;args&gt;
      * </ul>
      *
      * @param targetSdkVersion target SDK version
-     * @param argv arg strings
+     * @param argv             arg strings
      */
     public static final Runnable zygoteInit(int targetSdkVersion, String[] argv,
-            ClassLoader classLoader) {
+                                            ClassLoader classLoader) {
         if (RuntimeInit.DEBUG) {
             Slog.d(RuntimeInit.TAG, "RuntimeInit: Starting application from zygote");
         }

@@ -877,6 +877,7 @@ status_t IPCThreadState::waitForResponse(Parcel *reply, status_t *acquireResult)
 
                 if (reply) {
                     if ((tr.flags & TF_STATUS_CODE) == 0) {
+                        //  设置返回数据
                         reply->ipcSetDataReference(
                             reinterpret_cast<const uint8_t*>(tr.data.ptr.buffer),
                             tr.data_size,

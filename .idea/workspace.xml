@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="init启动service">
+    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="service_binder">
+      <change beforePath="$PROJECT_DIR$/.idea/cells-android10.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/cells-android10.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/ZygoteInit.java" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/core/java/com/android/internal/os/ZygoteInit.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/libs/binder/IPCThreadState.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/libs/binder/IPCThreadState.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,8 +17,19 @@
     <option name="formatViaClangd" value="false" />
   </component>
   <component name="Git.Settings">
+    <option name="PUSH_AUTO_UPDATE" value="true" />
+    <option name="PUSH_TAGS">
+      <GitPushTagMode>
+        <option name="argument" value="--tags" />
+        <option name="title" value="All" />
+      </GitPushTagMode>
+    </option>
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="5d4bcafc04171eab3551a28f2437fa9d24fe1384" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/frameworks/native/cmds/servicemanager/service_manager.c" root0="SKIP_HIGHLIGHTING" />
@@ -55,6 +65,7 @@
     "project.structure.proportion": "0.0",
     "project.structure.side.proportion": "0.0",
     "settings.editor.selected.configurable": "editor.preferences.fonts.default",
+    "show.migrate.to.gradle.popup": "false",
     "structure.view.defaults.are.configured": "true"
   }
 }]]></component>

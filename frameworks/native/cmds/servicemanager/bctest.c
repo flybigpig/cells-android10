@@ -8,6 +8,12 @@
 
 #include "binder.h"
 
+/**
+ *
+ * @param bs    binder_open 返回的 binder 状态值
+ * @param target  目标进程的 handle 值，ServiceManager 对应的 handle 值固定为 0
+ * @param name  服务的名字
+ */
 uint32_t svcmgr_lookup(struct binder_state *bs, uint32_t target, const char *name)
 {
     uint32_t handle;
@@ -19,6 +25,9 @@ uint32_t svcmgr_lookup(struct binder_state *bs, uint32_t target, const char *nam
     bio_put_string16_x(&msg, SVC_MGR_NAME);
     bio_put_string16_x(&msg, name);
 
+    //发起远程过程调用
+    //调用的方法是  SVC_MGR_CHECK_SERVICE
+    // client 端开始休眠
     if (binder_call(bs, &msg, &reply, target, SVC_MGR_CHECK_SERVICE))
         return 0;
 
@@ -55,7 +64,11 @@ int svcmgr_publish(struct binder_state *bs, uint32_t target, const char *name, v
 }
 
 unsigned token;
-
+/**
+ * 测试程序入口
+ * @param argc
+ * @param argv
+ */
 int main(int argc, char **argv)
 {
     struct binder_state *bs;
@@ -79,20 +92,22 @@ int main(int argc, char **argv)
             }
             svcmgr = handle;
             fprintf(stderr,"svcmgr is via %x\n", handle);
-        } else if (!strcmp(argv[0],"lookup")) {
+        } else if (!strcmp(argv[0],"lookup")) {  // 查找
             if (argc < 2) {
                 fprintf(stderr,"argument required\n");
                 return -1;
             }
+            //获取  服务的 handle 值  handle 值是服务在内核中的索引
             handle = svcmgr_lookup(bs, svcmgr, argv[1]);
             fprintf(stderr,"lookup(%s) = %x\n", argv[1], handle);
             argc--;
             argv++;
-        } else if (!strcmp(argv[0],"publish")) {
+        } else if (!strcmp(argv[0],"publish")) {  // 发布
             if (argc < 2) {
                 fprintf(stderr,"argument required\n");
                 return -1;
             }
+            // 发布服务
             svcmgr_publish(bs, svcmgr, argv[1], &token);
             argc--;
             argv++;

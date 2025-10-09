@@ -257,7 +257,7 @@ int binder_parse(struct binder_state *bs, struct binder_io *bio,
 {
     int r = 1;
     uintptr_t end = ptr + (uintptr_t) size;
-
+    //可能存在多组数据，通过 while 循环将每个数据解析完后再退出循环
     while (ptr < end) {
         uint32_t cmd = *(uint32_t *) ptr;
         ptr += sizeof(uint32_t);
@@ -278,6 +278,8 @@ int binder_parse(struct binder_state *bs, struct binder_io *bio,
 #endif
             ptr += sizeof(struct binder_ptr_cookie);
             break;
+        // 会走到这个分支
+        // cmd :
         case BR_TRANSACTION_SEC_CTX:
         case BR_TRANSACTION: {
             // data_transaction
@@ -287,6 +289,7 @@ int binder_parse(struct binder_state *bs, struct binder_io *bio,
                     ALOGE("parse: txn too small (binder_transaction_data_secctx)!\n");
                     return -1;
                 }
+                //解析出 binder_transaction_data 结构体
                 memcpy(&txn, (void*) ptr, sizeof(struct binder_transaction_data_secctx));
                 ptr += sizeof(struct binder_transaction_data_secctx);
             } else /* BR_TRANSACTION */ {
@@ -308,8 +311,13 @@ int binder_parse(struct binder_state *bs, struct binder_io *bio,
                 int res;
 
                 bio_init(&reply, rdata, sizeof(rdata), 4);
+                //进一步解析数据
+                //解析出 binder_io 结构体
                 bio_init_from_txn(&msg, &txn.transaction_data);
+                //调用回调函数
+                // binder_loop 传入的回调函数 svcmgr_handler
                 res = func(bs, &txn, &msg, &reply);
+                //回复数据
                 if (txn.transaction_data.flags & TF_ONE_WAY) {
                     binder_free_buffer(bs, txn.transaction_data.data.ptr.buffer);
                 } else {
@@ -441,7 +449,6 @@ fail:
 /**
  * binder_loop
 
-
  调用 ioctl + BC_ENTER_LOOPER 告诉驱动，应用进程即将进入循环
  进入 for 循环，ioctl + BINDER_WRITE_READ 向驱动读取数据，读到的数据格式为 binder_write_read
  调用 binder_parse 会解析 binder_write_read，并将其转换为 binder_transaction_data 和 binder_io
@@ -472,13 +479,15 @@ void binder_loop(struct binder_state *bs, binder_handler func)
         bwr.read_size = sizeof(readbuf);
         bwr.read_consumed = 0;
         bwr.read_buffer = (uintptr_t) readbuf;
-
+        //ServieManager 从这里唤醒
+        //获取到 Server 传过来的数据
         res = ioctl(bs->fd, BINDER_WRITE_READ, &bwr);
 
         if (res < 0) {
             ALOGE("binder_loop: ioctl failed (%s)\n", strerror(errno));
             break;
         }
+        // 收到的数据格式  https://cdn.jsdelivr.net/gh/zzh0838/MyImages@main/img/20230703174309.png
         // 解析收到的数据，func 是解析好数据后的回调函数
         res = binder_parse(bs, 0, (uintptr_t) readbuf, bwr.read_consumed, func);
         if (res == 0) {

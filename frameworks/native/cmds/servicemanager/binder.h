@@ -8,7 +8,8 @@
 #include <sys/ioctl.h>
 
 struct binder_state;
-
+// binder_io
+// binder_io 可以理解为一个数据集合，数据发送端将数据按照一定的顺序写入集合，数据接受端按照相同的顺序读取数据。
 struct binder_io
 {
     char *data;            /* pointer to read/write from */

@@ -94,10 +94,15 @@ struct binder_state
     size_t mapsize;
 };
 /**
- *
- * @param driver
- * @param mapsize
- * @return
+ * // driver 通常是 "/dev/binder"
+   // mapsize 是需要 mmap 的内存的大小
+
+   binder_open 的工作比较简单，分为以下几步：
+
+   通过系统调用 open() 来打开 /dev/binder，获得一个文件句柄信息。
+   通过 ioctl 获取 binder 的版本信息，比较 binder 协议版本是否相同，不同则跳出。
+   通过 mmap 内存映射 128K 的内存空间，即把 binder 驱动文件的 128K 字节映射到了内存空间。
+   很多面试喜欢问 binder 数据传输大小的限制，答案就在 binder mmap 函数的第二个参数，对于 ServiceManager 来说限制就是 128k（传输大小限制分多种情况，会在面试题部分详细讲解）
  */
 struct binder_state *binder_open(const char* driver, size_t mapsize)
 {
@@ -109,14 +114,15 @@ struct binder_state *binder_open(const char* driver, size_t mapsize)
         errno = ENOMEM;
         return NULL;
     }
-
+    //O_CLOEXEC 是一种标志，用于在打开文件时告诉操作系统，当调用 exec 函数时该文件描述符应该被关闭。O_CLOEXEC 的作用是避免文件描述符被继承到子进程中。
+    //打开 /dev/binder，拿到内核返回的句柄
     bs->fd = open(driver, O_RDWR | O_CLOEXEC);
     if (bs->fd < 0) {
         fprintf(stderr,"binder: cannot open %s (%s)\n",
                 driver, strerror(errno));
         goto fail_open;
     }
-
+    //查询版本
     if ((ioctl(bs->fd, BINDER_VERSION, &vers) == -1) ||
         (vers.protocol_version != BINDER_CURRENT_PROTOCOL_VERSION)) {
         fprintf(stderr,
@@ -125,6 +131,7 @@ struct binder_state *binder_open(const char* driver, size_t mapsize)
         goto fail_open;
     }
 
+    //完成内存映射
     bs->mapsize = mapsize;
     // mmap the binder driver
     bs->mapped = mmap(NULL, mapsize, PROT_READ, MAP_PRIVATE, bs->fd, 0);
@@ -133,7 +140,7 @@ struct binder_state *binder_open(const char* driver, size_t mapsize)
                 strerror(errno));
         goto fail_map;
     }
-
+    //  用于保存 binder_open 的返回结果。
     return bs;
 
 fail_map:
@@ -149,13 +156,16 @@ void binder_close(struct binder_state *bs)
     close(bs->fd);
     free(bs);
 }
+/**
 
+*
+*/
 int binder_become_context_manager(struct binder_state *bs)
 {
     struct flat_binder_object obj;
     memset(&obj, 0, sizeof(obj));
     obj.flags = FLAT_BINDER_FLAG_TXN_SECURITY_CTX;
-
+    // 发送数据
     int result = ioctl(bs->fd, BINDER_SET_CONTEXT_MGR_EXT, &obj);
 
     // fallback to original method
@@ -430,6 +440,14 @@ fail:
 }
 /**
  * binder_loop
+
+
+ 调用 ioctl + BC_ENTER_LOOPER 告诉驱动，应用进程即将进入循环
+ 进入 for 循环，ioctl + BINDER_WRITE_READ 向驱动读取数据，读到的数据格式为 binder_write_read
+ 调用 binder_parse 会解析 binder_write_read，并将其转换为 binder_transaction_data 和 binder_io
+ 调用 func 函数指针，并将解析好的数据 binder_transaction_data 和 binder_io 传给 func 函数
+ 进入下一个循环周期，继续从驱动读取数据
+
  *
  * @param bs
  * @param func
@@ -437,17 +455,20 @@ fail:
 void binder_loop(struct binder_state *bs, binder_handler func)
 {
     int res;
+    // ioctl 读写数据类型
     struct binder_write_read bwr;
     uint32_t readbuf[32];
 
     bwr.write_size = 0;
     bwr.write_consumed = 0;
     bwr.write_buffer = 0;
-
+    // 告诉驱动，应用程序要进入循环了
     readbuf[0] = BC_ENTER_LOOPER;
+    // ioctl 的基本封装
     binder_write(bs, readbuf, sizeof(uint32_t));
 
     for (;;) {
+        //从驱动读数据
         bwr.read_size = sizeof(readbuf);
         bwr.read_consumed = 0;
         bwr.read_buffer = (uintptr_t) readbuf;
@@ -458,7 +479,7 @@ void binder_loop(struct binder_state *bs, binder_handler func)
             ALOGE("binder_loop: ioctl failed (%s)\n", strerror(errno));
             break;
         }
-
+        // 解析收到的数据，func 是解析好数据后的回调函数
         res = binder_parse(bs, 0, (uintptr_t) readbuf, bwr.read_consumed, func);
         if (res == 0) {
             ALOGE("binder_loop: unexpected reply?!\n");

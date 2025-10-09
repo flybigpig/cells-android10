@@ -251,6 +251,8 @@ int do_add_service(struct binder_state *bs, const uint16_t *s, size_t len, uint3
     return 0;
 }
 
+//txn_secctx msg 是调用方发来的数据
+//reply 是返回给调用方的数据
 int svcmgr_handler(struct binder_state *bs,
                    struct binder_transaction_data_secctx *txn_secctx,
                    struct binder_io *msg,
@@ -378,6 +380,7 @@ static int audit_callback(void *data, __unused security_class_t cls, char *buf, 
     snprintf(buf, len, "service=%s pid=%d uid=%d", ad->name, ad->pid, ad->uid);
     return 0;
 }
+
 /**
  * main  binder_open  - binder_become_context_manager  -  binder_loop
  * @param argc
@@ -386,6 +389,9 @@ static int audit_callback(void *data, __unused security_class_t cls, char *buf, 
  */
 int main(int argc, char** argv)
 {
+// 1：调用 binder_open 函数，完成驱动初始化
+// 2：通过 binder_become_context_manager 函数将当前线程注册为 contextmanager
+// 3：进入循环，调用 binder_loop 函数进入循环
     struct binder_state *bs;
     union selinux_callback cb;
     char *driver;
@@ -395,7 +401,7 @@ int main(int argc, char** argv)
     } else {
         driver = "/dev/binder";
     }
-
+    // open
     bs = binder_open(driver, 128*1024);
     if (!bs) {
 #ifdef VENDORSERVICEMANAGER
@@ -408,7 +414,7 @@ int main(int argc, char** argv)
 #endif
         return -1;
     }
-
+    // become_manager
     if (binder_become_context_manager(bs)) {
         ALOGE("cannot become context manager (%s)\n", strerror(errno));
         return -1;
@@ -440,7 +446,7 @@ int main(int argc, char** argv)
         abort();
     }
 
-
+    // loop
     binder_loop(bs, svcmgr_handler);
 
     return 0;

@@ -627,7 +627,9 @@ static void UmountDebugRamdisk() {
         LOG(ERROR) << "Failed to umount /debug_ramdisk";
     }
 }
-
+/*
+* 核心二阶段
+*/
 int SecondStageMain(int argc, char** argv) {
     if (REBOOT_BOOTLOADER_ON_PANIC) {
         InstallRebootSignalHandlers();
@@ -695,7 +697,7 @@ int SecondStageMain(int argc, char** argv) {
         PLOG(FATAL) << result.error();
     }
 
-    // 注册epoll
+    // 注册epoll -- 文件fg监听
     InstallSignalFdHandler(&epoll);
 
     property_load_boot_defaults(load_debug_prop);

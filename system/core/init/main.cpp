@@ -66,13 +66,15 @@ int main(int argc, char** argv) {
         }
 
         if (!strcmp(argv[1], "selinux_setup")) {
+        // FirstStageMain -> SetupSelinux
             return SetupSelinux(argv);
         }
         // 核心
+        // SetupSelinux -> SecondStageMain
         if (!strcmp(argv[1], "second_stage")) {
             return SecondStageMain(argc, argv);
         }
     }
-
+    // FirstStageMain 初始化文件系统 日志等 ，转到SecondStageMain
     return FirstStageMain(argc, argv);
 }

@@ -5504,6 +5504,12 @@ static int binder_mmap(struct file *filp, struct vm_area_struct *vma /*用户空
     return ret;
 }
 
+/**
+ *
+ * @param nodp
+ * @param filp
+ * @return
+ */
 static int binder_open(struct inode *nodp, struct file *filp) {
     struct binder_proc *proc;
     struct binder_device *binder_dev;
@@ -5513,17 +5519,22 @@ static int binder_open(struct inode *nodp, struct file *filp) {
 
     binder_debug(BINDER_DEBUG_OPEN_CLOSE, "%s: %d:%d\n", __func__,
                  current->group_leader->pid, current->pid);
-
+    // 分配proc数据结构大小的空间
     proc = kzalloc(sizeof(*proc), GFP_KERNEL);
     if (proc == NULL)
         return -ENOMEM;
+    // 枷锁
     spin_lock_init(&proc->inner_lock);
     spin_lock_init(&proc->outer_lock);
+    // 默认引用0
     atomic_set(&proc->tmp_ref, 0);
+
     get_task_struct(current->group_leader);
     proc->tsk = current->group_leader;
     mutex_init(&proc->files_lock);
+    // 初始化list
     INIT_LIST_HEAD(&proc->todo);
+    //  binder 支持当前协议 ，设置优先级
     if (binder_supported_policy(current->policy)) {
         proc->default_priority.sched_policy = current->policy;
         proc->default_priority.prio = current->normal_prio;
@@ -5531,6 +5542,7 @@ static int binder_open(struct inode *nodp, struct file *filp) {
         proc->default_priority.sched_policy = SCHED_NORMAL;
         proc->default_priority.prio = NICE_TO_PRIO(0);
     }
+
 
     binder_dev = container_of(filp->private_data,
     struct binder_device,
@@ -5551,6 +5563,8 @@ static int binder_open(struct inode *nodp, struct file *filp) {
     proc->context = &binder_dev->context;
 #endif
 
+
+    // 开始初始化
     binder_alloc_init(&proc->alloc);
 
     binder_stats_created(BINDER_STAT_PROC);
@@ -5560,6 +5574,7 @@ static int binder_open(struct inode *nodp, struct file *filp) {
     filp->private_data = proc;
 
     mutex_lock(&binder_procs_lock);
+    // 添加到主binder list
     hlist_add_head(&proc->proc_node, &binder_procs);
     mutex_unlock(&binder_procs_lock);
 

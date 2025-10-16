@@ -307,6 +307,7 @@ int svcmgr_handler(struct binder_state *bs,
     }
 
     switch(txn->code) {
+        // 查询检测服务
     case SVC_MGR_GET_SERVICE:
     case SVC_MGR_CHECK_SERVICE:
         s = bio_get_string16(msg, &len);
@@ -319,7 +320,7 @@ int svcmgr_handler(struct binder_state *bs,
             break;
         bio_put_ref(reply, handle);
         return 0;
-
+    // 添加服务
     case SVC_MGR_ADD_SERVICE:
         s = bio_get_string16(msg, &len);
         if (s == NULL) {

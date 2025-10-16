@@ -4,12 +4,11 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="system.init">
+    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="surfaceflinger">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/libs/gui/ISurfaceComposerClient.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/libs/gui/ISurfaceComposerClient.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/SurfaceFlinger.h" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/SurfaceFlinger.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/main_surfaceflinger.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/main_surfaceflinger.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/native/cmds/servicemanager/binder.c" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/cmds/servicemanager/binder.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/native/cmds/servicemanager/service_manager.c" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/cmds/servicemanager/service_manager.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kernel/drivers/android/binder.c" beforeDir="false" afterPath="$PROJECT_DIR$/kernel/drivers/android/binder.c" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -180,7 +179,14 @@
       <option name="project" value="LOCAL" />
       <updated>1760016547036</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="surfaceflinger">
+      <created>1760604231129</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1760604231129</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="Vcs.Log.History.Properties">
@@ -216,6 +222,7 @@
     <MESSAGE value="SurfaceFlinger" />
     <MESSAGE value="init启动service" />
     <MESSAGE value="servicemanager_service_structure" />
-    <option name="LAST_COMMIT_MESSAGE" value="servicemanager_service_structure" />
+    <MESSAGE value="surfaceflinger" />
+    <option name="LAST_COMMIT_MESSAGE" value="surfaceflinger" />
   </component>
 </project>

@@ -849,6 +849,7 @@ private:
     }
 
     std::optional<DisplayId> getInternalDisplayIdLocked() const {
+        // 通过hwComposer 获取id
         const auto hwcDisplayId = getHwComposer().getInternalHwcDisplayId();
         return hwcDisplayId ? getHwComposer().toPhysicalDisplayId(*hwcDisplayId) : std::nullopt;
     }

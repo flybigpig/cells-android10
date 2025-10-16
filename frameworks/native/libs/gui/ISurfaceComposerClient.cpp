@@ -47,7 +47,7 @@ public:
           : SafeBpInterface<ISurfaceComposerClient>(impl, "BpSurfaceComposerClient") {}
 
     ~BpSurfaceComposerClient() override;
-
+    // 创建surface
     status_t createSurface(const String8& name, uint32_t width, uint32_t height, PixelFormat format,
                            uint32_t flags, const sp<IBinder>& parent, LayerMetadata metadata,
                            sp<IBinder>* handle, sp<IGraphicBufferProducer>* gbp) override {

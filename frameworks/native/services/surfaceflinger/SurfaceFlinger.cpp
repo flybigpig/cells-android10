@@ -433,6 +433,11 @@ namespace android {
         startBootAnim();
     }
 
+    /**
+     * 初始化客户端
+     * @param client
+     * @return
+     */
     static sp<ISurfaceComposerClient> initClient(const sp<Client> &client) {
         status_t err = client->initCheck();
         if (err == NO_ERROR) {
@@ -445,6 +450,12 @@ namespace android {
         return initClient(new Client(this));
     }
 
+    /**
+     * 创建显示窗口
+     * @param displayName
+     * @param secure
+     * @return
+     */
     sp<IBinder> SurfaceFlinger::createDisplay(const String8 &displayName,
                                               bool secure) {
         class DisplayToken : public BBinder {
@@ -488,12 +499,18 @@ namespace android {
         if (!state.isVirtual()) {
             ALOGE("destroyDisplay called for non-virtual display");
             return;
+
+
         }
         mInterceptor->saveDisplayDeletion(state.sequenceId);
         mCurrentState.displays.removeItemsAt(index);
         setTransactionFlags(eDisplayTransactionNeeded);
     }
 
+    /**
+     * 获取id
+     * @return
+     */
     std::vector<PhysicalDisplayId> SurfaceFlinger::getPhysicalDisplayIds() const {
         Mutex::Autolock lock(mStateLock);
 
@@ -501,7 +518,7 @@ namespace android {
         if (!internalDisplayId) {
             return {};
         }
-
+        
         std::vector<PhysicalDisplayId> displayIds;
         displayIds.reserve(mPhysicalDisplayTokens.size());
         displayIds.push_back(internalDisplayId->value);

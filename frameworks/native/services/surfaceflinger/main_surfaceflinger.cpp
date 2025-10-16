@@ -36,12 +36,16 @@
 using namespace android;
 
 static status_t startGraphicsAllocatorService() {
+    //
     using android::hardware::configstore::getBool;
     using android::hardware::configstore::V1_0::ISurfaceFlingerConfigs;
+    //  硬件 开关
     if (!android::sysprop::start_graphics_allocator_service(false)) {
         return OK;
     }
 
+    // 数据传输 通道
+    // V2   V3
     status_t result = hardware::registerPassthroughServiceImplementation<
             android::hardware::graphics::allocator::V3_0::IAllocator>();
     if (result == OK) {
@@ -77,14 +81,17 @@ static status_t startDisplayService() {
  *  onFirstRef() -> init() -> run()
  * @return
  */
-int main(int, char**) {
+int main(int, char **) {
     OtherSystemServiceLoopRun();
 
     signal(SIGPIPE, SIG_IGN);
 
     hardware::configureRpcThreadpool(1 /* maxThreads */,
-            false /* callerWillJoin */);
+                                     false /* callerWillJoin */);
 
+    /**
+     * 分配硬件 服务
+     */
     startGraphicsAllocatorService();
 
     // When SF is launched in its own process, limit the number of

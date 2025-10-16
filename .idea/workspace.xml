@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="servicemanager_service_structure">
+    <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="system.init">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/cmds/servicemanager/bctest.c" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/cmds/servicemanager/bctest.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,6 +41,7 @@
   &quot;associatedIndex&quot;: 7
 }</component>
   <component name="ProjectId" id="2xLhJeMH6fvyhroItYg0oY8X8Th" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="compactDirectories" value="true" />
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -59,7 +60,7 @@
     &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/bugly/cells-android10&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/frameworks/cells-android10&quot;,
     &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
     &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
     &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,

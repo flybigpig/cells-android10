@@ -488,6 +488,10 @@ void IPCThreadState::blockUntilThreadAvailable()
     pthread_mutex_unlock(&mProcess->mThreadCountLock);
 }
 
+/**
+ * 执行
+ * @return
+ */
 status_t IPCThreadState::getAndExecuteCommand()
 {
     status_t result;
@@ -827,7 +831,12 @@ status_t IPCThreadState::sendReply(const Parcel& reply, uint32_t flags)
 
     return waitForResponse(nullptr, nullptr);
 }
-
+/**
+ * 处理数据
+ * @param reply
+ * @param acquireResult
+ * @return
+ */
 status_t IPCThreadState::waitForResponse(Parcel *reply, status_t *acquireResult)
 {
     uint32_t cmd;
@@ -920,6 +929,11 @@ finish:
     return err;
 }
 
+/**
+ * 数据交换
+ * @param doReceive
+ * @return
+ */
 status_t IPCThreadState::talkWithDriver(bool doReceive)
 {
     if (mProcess->mDriverFD <= 0) {

@@ -651,6 +651,15 @@ void IPCThreadState::stopProcess(bool /*immediate*/)
     //kill(getpid(), SIGKILL);
 }
 
+/**
+ *
+ * @param handle
+ * @param code
+ * @param data
+ * @param reply
+ * @param flags
+ * @return
+ */
 status_t IPCThreadState::transact(int32_t handle,
                                   uint32_t code, const Parcel& data,
                                   Parcel* reply, uint32_t flags)
@@ -822,6 +831,13 @@ IPCThreadState::~IPCThreadState()
 {
 }
 
+/**
+ *
+ * 返回数据
+ * @param reply
+ * @param flags
+ * @return
+ */
 status_t IPCThreadState::sendReply(const Parcel& reply, uint32_t flags)
 {
     status_t err;

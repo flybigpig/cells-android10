@@ -74,6 +74,7 @@ static status_t startDisplayService() {
 
 /**
  * 主程序启动
+ *  onFirstRef() -> init() -> run()
  * @return
  */
 int main(int, char**) {

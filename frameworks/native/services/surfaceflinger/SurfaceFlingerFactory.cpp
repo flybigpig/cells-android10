@@ -38,7 +38,10 @@
 #include "TimeStats/TimeStats.h"
 
 namespace android::surfaceflinger {
-
+/**
+ * 工厂模式
+ * @return
+ */
 sp<SurfaceFlinger> createSurfaceFlinger() {
     class Factory final : public surfaceflinger::Factory {
     public:

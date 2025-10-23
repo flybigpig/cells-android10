@@ -25,7 +25,8 @@
 namespace android {
 
 // ----------------------------------------------------------------------
-
+//  继承IInterface.h
+// frameworks/native/libs/binder/include/binder/IInterface.h
 class IServiceManager : public IInterface
 {
 public:

@@ -72,6 +72,7 @@ sp<ProcessState> ProcessState::self()
     if (gProcess != nullptr) {
         return gProcess;
     }
+    // 进程空间 1M-8k
     gProcess = new ProcessState(DEFAULT_BINDER_VM_SIZE);
     return gProcess;
 }
@@ -100,6 +101,7 @@ void ProcessState::setContextObject(const sp<IBinder>& object)
 
 sp<IBinder> ProcessState::getContextObject(const sp<IBinder>& /*caller*/)
 {
+    // binder_hanlde(0)
     return getStrongProxyForHandle(0);
 }
 
@@ -276,6 +278,11 @@ ProcessState::handle_entry* ProcessState::lookupHandleLocked(int32_t handle)
     return &mHandleToObject.editItemAt(handle);
 }
 
+/**
+ * 0 -》 serviceManger
+ * @param handle
+ * @return
+ */
 sp<IBinder> ProcessState::getStrongProxyForHandle(int32_t handle)
 {
     sp<IBinder> result;
@@ -437,6 +444,7 @@ static int open_driver()
 }
 
 ProcessState::ProcessState(size_t mmap_size)
+    //  binder_open
     : mDriverFD(open_driver())
     , mVMStart(MAP_FAILED)
     , mThreadCountLock(PTHREAD_MUTEX_INITIALIZER)
@@ -450,6 +458,7 @@ ProcessState::ProcessState(size_t mmap_size)
     , mThreadPoolStarted(false)
     , mSpawnThreadOnStart(true)
     , mThreadPoolSeq(1)
+    // 传入的映射虚拟内存的大小
     , mMmapSize(mmap_size)
     , mCallRestriction(CallRestriction::NONE)
 {

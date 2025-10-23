@@ -114,6 +114,9 @@ public:
     }
 };
 
+/**
+ * 声明服务
+ */
 IMPLEMENT_META_INTERFACE(MediaPlayerService, "android.media.IMediaPlayerService");
 
 // ----------------------------------------------------------------------

@@ -195,12 +195,27 @@ void release_object(const sp<ProcessState>& proc,
     release_object(proc, obj, who, nullptr);
 }
 
+/**
+ *
+ * @param flat
+ * @param out
+ * @return
+ */
 inline static status_t finish_flatten_binder(
     const sp<IBinder>& /*binder*/, const flat_binder_object& flat, Parcel* out)
 {
     return out->writeObject(flat, false);
 }
 
+/**
+ * /**
+ * writeStrongBinder -> flatten_binder
+ *
+ * @param proc
+ * @param binder  -> service
+ * @param out  this -> parcel data
+ * @return
+ */
 status_t flatten_binder(const sp<ProcessState>& /*proc*/,
     const sp<IBinder>& binder, Parcel* out)
 {
@@ -215,6 +230,7 @@ status_t flatten_binder(const sp<ProcessState>& /*proc*/,
     }
 
     if (binder != nullptr) {
+        // 返回的是自己 binder->localBinder = binder  == new Service
         BBinder *local = binder->localBinder();
         if (!local) {
             BpBinder *proxy = binder->remoteBinder();
@@ -227,6 +243,7 @@ status_t flatten_binder(const sp<ProcessState>& /*proc*/,
             obj.handle = handle;
             obj.cookie = 0;
         } else {
+            // 这个分支
             if (local->isRequestingSid()) {
                 obj.flags |= FLAT_BINDER_FLAG_TXN_SECURITY_CTX;
             }
@@ -239,7 +256,7 @@ status_t flatten_binder(const sp<ProcessState>& /*proc*/,
         obj.binder = 0;
         obj.cookie = 0;
     }
-
+    // 构造finish_flatten_binder
     return finish_flatten_binder(binder, obj, out);
 }
 
@@ -1098,7 +1115,12 @@ status_t Parcel::writeString8(const String8& str)
     }
     return err;
 }
-
+/**
+ *
+ *
+ * @param str
+ * @return
+ */
 status_t Parcel::writeString16(const std::unique_ptr<String16>& str)
 {
     if (!str) {
@@ -1131,6 +1153,11 @@ status_t Parcel::writeString16(const char16_t* str, size_t len)
     return err;
 }
 
+/**
+ *  data.writeStrongBinder(service);
+ * @param val
+ * @return
+ */
 status_t Parcel::writeStrongBinder(const sp<IBinder>& val)
 {
     return flatten_binder(ProcessState::self(), val, this);
@@ -1366,7 +1393,13 @@ status_t Parcel::write(const FlattenableHelperInterface& val)
 
     return err;
 }
-
+/**
+ * 此方法 构造parcel data返回值
+ * finish_flatten_binder
+ * @param val
+ * @param nullMetaData
+ * @return
+ */
 status_t Parcel::writeObject(const flat_binder_object& val, bool nullMetaData)
 {
     const bool enoughData = (mDataPos+sizeof(val)) <= mDataCapacity;

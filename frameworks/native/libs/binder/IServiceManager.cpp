@@ -36,14 +36,22 @@
 
 namespace android {
 
+/**
+ * 获取serviceManager
+ * @return
+ */
 sp<IServiceManager> defaultServiceManager()
 {
     if (gDefaultServiceManager != nullptr) return gDefaultServiceManager;
 
     {
         AutoMutex _l(gDefaultServiceManagerLock);
+        // 等待servicemanager启动
         while (gDefaultServiceManager == nullptr) {
+            // 类型转换 1
+            // gDefaultServiceManager =  new BpServiceManager(new BpBinder(0))
             gDefaultServiceManager = interface_cast<IServiceManager>(
+                    // return getStrongProxyForHandle(0);
                 ProcessState::self()->getContextObject(nullptr));
             if (gDefaultServiceManager == nullptr)
                 sleep(1);
@@ -252,17 +260,29 @@ public:
         return reply.readStrongBinder();
     }
 
+    /**
+     * 添加服务
+     * @param name
+     * @param service
+     * @param allowIsolated
+     * @param dumpsysPriority
+     * @return
+     */
     virtual status_t addService(const String16& name, const sp<IBinder>& service,
                                 bool allowIsolated, int dumpsysPriority) {
+        //  defaultServiceManager()->addService(String16("media.player"), new MediaPlayerService());
         Parcel data, reply;
+        // IServiceManager::getInterfaceDescriptor() ="android.media.IMediaPlayerService"
         data.writeInterfaceToken(IServiceManager::getInterfaceDescriptor());
         data.writeString16(name);
         data.writeStrongBinder(service);
         data.writeInt32(allowIsolated ? 1 : 0);
         data.writeInt32(dumpsysPriority);
+        // remote = bpBinder
         status_t err = remote()->transact(ADD_SERVICE_TRANSACTION, data, &reply);
         return err == NO_ERROR ? reply.readExceptionCode() : err;
     }
+
 
     virtual Vector<String16> listServices(int dumpsysPriority) {
         Vector<String16> res;
@@ -282,6 +302,7 @@ public:
     }
 };
 
+// 定义 1
 IMPLEMENT_META_INTERFACE(ServiceManager, "android.os.IServiceManager");
 
 }; // namespace android

@@ -205,7 +205,14 @@ status_t BpBinder::dump(int fd, const Vector<String16>& args)
     status_t err = transact(DUMP_TRANSACTION, send, &reply);
     return err;
 }
-
+/**
+ *
+ * @param code
+ * @param data
+ * @param reply
+ * @param flags
+ * @return
+ */
 // NOLINTNEXTLINE(google-default-arguments)
 status_t BpBinder::transact(
     uint32_t code, const Parcel& data, Parcel* reply, uint32_t flags)

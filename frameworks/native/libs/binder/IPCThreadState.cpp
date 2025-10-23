@@ -652,7 +652,7 @@ void IPCThreadState::stopProcess(bool /*immediate*/)
 }
 
 /**
- *
+ * 底层传递数据
  * @param handle
  * @param code
  * @param data
@@ -702,6 +702,7 @@ status_t IPCThreadState::transact(int32_t handle,
             ALOGI(">>>>>> CALLING transaction %d", code);
         }
         #endif
+        // 等待回应 和 回应
         if (reply) {
             err = waitForResponse(reply);
         } else {
@@ -859,6 +860,7 @@ status_t IPCThreadState::waitForResponse(Parcel *reply, status_t *acquireResult)
     int32_t err;
 
     while (1) {
+        // 数据交互
         if ((err=talkWithDriver()) < NO_ERROR) break;
         err = mIn.errorCheck();
         if (err < NO_ERROR) break;

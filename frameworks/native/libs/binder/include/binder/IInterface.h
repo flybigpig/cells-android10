@@ -70,7 +70,10 @@ protected:
     typedef INTERFACE           BaseInterface;
     virtual IBinder*            onAsBinder();
 };
-
+/**
+ * 宏定义函数声明 和函数实现
+ *
+ */
 // ----------------------------------------------------------------------
 
 #define DECLARE_META_INTERFACE(INTERFACE)                               \

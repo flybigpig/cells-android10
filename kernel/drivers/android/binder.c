@@ -6394,6 +6394,18 @@ BINDER_DEBUG_ENTRY(transaction_log);
 
 static int __init
 
+/**
+ *
+    这行代码会:
+    创建 /dev/binder 设备节点
+    注册设备操作函数（如 binder_open、binder_release、binder_mmap 等）
+    为设备分配次设备号（通常为动态分配）
+    杂项设备特点
+    主设备号固定: 所有杂项设备共享主设备号 10
+    次设备号动态: 系统自动分配唯一的次设备号
+    简化注册: 相比完整的字符设备注册，misc_register 更加简单
+    其中 binder_fops 定义了设备支持的操作函数。
+ */
 init_binder_device(const char *name) {
     int ret;
     struct binder_device *binder_device;
@@ -6501,6 +6513,7 @@ binder_init(void) {
 
     device_tmp = device_names;
     while ((device_name = strsep(&device_tmp, ","))) {
+        // init_binder_device
         ret = init_binder_device(device_name);
         if (ret)
             goto err_init_binder_device_failed;

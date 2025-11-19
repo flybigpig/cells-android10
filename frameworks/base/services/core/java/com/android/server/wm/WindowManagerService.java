@@ -970,6 +970,16 @@ public class WindowManagerService extends IWindowManager.Stub
         return sInstance;
     }
 
+    /**
+     *
+     * @param context
+     * @param im
+     * @param showBootMsgs
+     * @param onlyCore
+     * @param policy
+     * @param atm
+     * @return
+     */
     public static WindowManagerService main(final Context context, final InputManagerService im,
             final boolean showBootMsgs, final boolean onlyCore, WindowManagerPolicy policy,
             ActivityTaskManagerService atm) {
@@ -980,11 +990,17 @@ public class WindowManagerService extends IWindowManager.Stub
     /**
      * Creates and returns an instance of the WindowManagerService. This call allows the caller
      * to override the {@link TransactionFactory} to stub functionality under test.
+
+     * DisplayThread 的 getHandler 方法，用来得到 DisplayThread 的
+     * Handler 实例。DisplayThread 是一个单例的前台线程，这个线程用来处理需要低延时显
+     * 示的相关操作，并只能由 WindowManager、DisplayManager 和 InputManager 实时
+     * 执行快速操作
      */
     @VisibleForTesting
     public static WindowManagerService main(final Context context, final InputManagerService im,
             final boolean showBootMsgs, final boolean onlyCore, WindowManagerPolicy policy,
             ActivityTaskManagerService atm, TransactionFactory transactionFactory) {
+        //WMS 的创建是运行在“android.display”线程中
         DisplayThread.getHandler().runWithScissors(() ->
                 sInstance = new WindowManagerService(context, im, showBootMsgs, onlyCore, policy,
                         atm, transactionFactory), 0);
@@ -1007,6 +1023,16 @@ public class WindowManagerService extends IWindowManager.Stub
         new WindowManagerShellCommand(this).exec(this, in, out, err, args, callback, result);
     }
 
+    /**
+     *  core
+     * @param context
+     * @param inputManager
+     * @param showBootMsgs
+     * @param onlyCore
+     * @param policy
+     * @param atm
+     * @param transactionFactory
+     */
     private WindowManagerService(Context context, InputManagerService inputManager,
             boolean showBootMsgs, boolean onlyCore, WindowManagerPolicy policy,
             ActivityTaskManagerService atm, TransactionFactory transactionFactory) {

@@ -1018,11 +1018,13 @@ public final class SystemServer {
             traceBeginAndSlog("StartInputManagerService");
             inputManager = new InputManagerService(context);
             traceEnd();
-
+            // StartWindowManagerService
             traceBeginAndSlog("StartWindowManagerService");
             // WMS needs sensor service ready
             ConcurrentUtils.waitForFutureNoInterrupt(mSensorServiceStart, START_SENSOR_SERVICE);
             mSensorServiceStart = null;
+            // struct windowmanagermanager.hidl is using sensor service and input service, and
+            // window manager service.
             wm = WindowManagerService.main(context, inputManager, !mFirstBoot, mOnlyCore,
                     new PhoneWindowManager(), mActivityManagerService.mActivityTaskManager);
             ServiceManager.addService(Context.WINDOW_SERVICE, wm, /* allowIsolated= */ false,

@@ -517,6 +517,16 @@ int mains(int argc, char* const argv[])
     }
 
     // 根据不同的启动标志选择对应的入口类进行启动
+    /**
+     * 根据不同的启动模式选择对应的入口类进行启动：
+     * - 如果是 zygote 模式，则启动 ZygoteInit 类，这是 Android 系统中用于孵化新进程的守护进程；
+     * - 如果是指定了具体的类名（className），则启动 RuntimeInit 类，用于直接运行指定的 Java 类；
+     *
+     * @param zygote 布尔值，指示是否以 zygote 模式启动
+     * @param className 要启动的 Java 类名，如果为空则表示是 zygote 模式
+     * @param runtime AppRuntime 实例，用于启动相应的 Java 类
+     * @param args 传递给目标类的参数向量
+     */
     if (zygote) {
         runtime.start("com.android.internal.os.ZygoteInit", args, zygote);
     } else if (className) {

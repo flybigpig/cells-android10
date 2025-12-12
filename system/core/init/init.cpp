@@ -140,22 +140,39 @@ namespace android {
             return parser;
         }
 
+
+        /**
+         * @brief 加载启动脚本配置文件
+         *
+         * 该函数根据系统环境加载不同的初始化配置文件。如果存在 /.cell 文件，
+         * 则加载虚拟化相关的配置；否则根据 ro.boot.init_rc 属性决定加载默认
+         * 配置或自定义配置文件。
+         *
+         * @param action_manager 动作管理器引用，用于处理配置中的动作定义
+         * @param service_list 服务列表引用，用于注册配置中的服务定义
+         */
         static void LoadBootScripts(ActionManager &action_manager, ServiceList &service_list) {
             Parser parser = CreateParser(action_manager, service_list);
 
+            // 检查是否为虚拟化环境(cell模式)
             if (access("/.cell", F_OK) == 0) {
                 LOG(INFO) << "LOAD VP RC...";
                 parser.ParseConfig("/init.rc");
+                // 尝试解析系统cell配置，失败则加入延迟加载队列
                 if (!parser.ParseConfig("/cells/system")) {
                     late_import_paths.emplace_back("/cells/system");
                 }
+                // 尝试解析厂商cell配置，失败则加入延迟加载队列
                 if (!parser.ParseConfig("/cells/vendor")) {
                     late_import_paths.emplace_back("/cells/vendor");
                 }
             } else {
+                // 非虚拟化环境，根据属性加载配置
                 std::string bootscript = GetProperty("ro.boot.init_rc", "");
                 if (bootscript.empty()) {
+                    // 默认配置加载流程
                     parser.ParseConfig("/init.rc");
+                    // 按优先级顺序尝试加载各分区的初始化配置
                     if (!parser.ParseConfig("/system/etc/init")) {
                         late_import_paths.emplace_back("/system/etc/init");
                     }
@@ -172,6 +189,7 @@ namespace android {
                         late_import_paths.emplace_back("/vendor/etc/init");
                     }
                 } else {
+                    // 加载自定义启动脚本
                     parser.ParseConfig(bootscript);
                 }
             }

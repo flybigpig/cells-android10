@@ -181,12 +181,26 @@ bool Parser::ParseConfigDir(const std::string& path) {
     return true;
 }
 
+
+/**
+ * @brief 解析配置文件或目录
+ * @param path 配置文件路径或配置目录路径
+ * @return bool 解析成功返回true，解析失败返回false
+ *
+ * 该函数根据传入的路径判断是文件还是目录，
+ * 如果是目录则调用ParseConfigDir函数解析整个目录，
+ * 如果是文件则调用ParseConfigFile函数解析单个文件。
+ */
 bool Parser::ParseConfig(const std::string& path) {
+    // 判断路径是否为目录
     if (is_dir(path.c_str())) {
+        // 如果是目录，解析整个配置目录
         return ParseConfigDir(path);
     }
+    // 如果是文件，解析单个配置文件
     return ParseConfigFile(path);
 }
+
 
 }  // namespace init
 }  // namespace android

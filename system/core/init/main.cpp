@@ -48,16 +48,27 @@ AsanReportCallback(const char* str) {
 
 using namespace android::init;
 
+
+/**
+ * 程序主入口函数，根据不同的命令行参数执行不同的初始化阶段
+ *
+ * @param argc 命令行参数个数
+ * @param argv 命令行参数数组
+ * @return 返回程序执行结果状态码
+ */
 int main(int argc, char** argv) {
 #if __has_feature(address_sanitizer)
     __asan_set_error_report_callback(AsanReportCallback);
 #endif
 
+    // 检查程序是否以"ueventd"名称运行，如果是则执行ueventd主逻辑
     if (!strcmp(basename(argv[0]), "ueventd")) {
         return ueventd_main(argc, argv);
     }
 
+    // 当存在命令行参数时，根据第一个参数决定执行哪个初始化阶段
     if (argc > 1) {
+        // 处理子上下文模式
         if (!strcmp(argv[1], "subcontext")) {
             android::base::InitLogging(argv, &android::base::KernelLogger);
             const BuiltinFunctionMap function_map;
@@ -65,16 +76,19 @@ int main(int argc, char** argv) {
             return SubcontextMain(argc, argv, &function_map);
         }
 
+        // 处理SELinux设置阶段，从FirstStageMain过渡到SetupSelinux
         if (!strcmp(argv[1], "selinux_setup")) {
-        // FirstStageMain -> SetupSelinux
             return SetupSelinux(argv);
         }
-        // 核心
-        // SetupSelinux -> SecondStageMain
+
+        // 处理第二阶段初始化，从SetupSelinux过渡到SecondStageMain
         if (!strcmp(argv[1], "second_stage")) {
             return SecondStageMain(argc, argv);
         }
     }
-    // FirstStageMain 初始化文件系统 日志等 ，转到SecondStageMain
+
+    // 执行第一阶段初始化，主要负责文件系统、日志等基础环境的初始化，
+    // 完成后将过渡到SecondStageMain继续执行
     return FirstStageMain(argc, argv);
 }
+

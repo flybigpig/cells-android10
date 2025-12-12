@@ -187,12 +187,26 @@ Result<Success> Service::EnterNamespaces() const {
     return Success();
 }
 
+/**
+ * 展开参数并执行新的程序
+ *
+ * 该函数首先对输入参数进行属性展开处理，然后调用execv系统调用执行新的程序。
+ * 在执行前可以选择发送SIGSTOP信号暂停当前进程。
+ *
+ * @param args 包含程序路径和参数的字符串向量，第一个元素为程序路径
+ * @param sigstop 布尔值，如果为true则在执行前发送SIGSTOP信号暂停进程
+ *
+ * @return 当execv成功执行时返回true，由于execv不会返回除非出错，所以实际很少返回true
+ */
 static bool ExpandArgsAndExecv(const std::vector<std::string>& args, bool sigstop) {
     std::vector<std::string> expanded_args;
     std::vector<char*> c_strings;
 
+    // 调整展开参数向量大小以匹配输入参数数量
     expanded_args.resize(args.size());
     c_strings.push_back(const_cast<char*>(args[0].data()));
+
+    // 遍历除第一个参数外的所有参数，进行属性展开处理
     for (std::size_t i = 1; i < args.size(); ++i) {
         if (!expand_props(args[i], &expanded_args[i])) {
             LOG(FATAL) << args[0] << ": cannot expand '" << args[i] << "'";
@@ -201,12 +215,14 @@ static bool ExpandArgsAndExecv(const std::vector<std::string>& args, bool sigsto
     }
     c_strings.push_back(nullptr);
 
+    // 根据sigstop参数决定是否发送SIGSTOP信号暂停当前进程
     if (sigstop) {
         kill(getpid(), SIGSTOP);
     }
     // 会从这里启动zygote.app_main.cpp
     return execv(c_strings[0], c_strings.data()) == 0;
 }
+
 
 static bool IsRuntimeApexReady() {
     struct stat buf;

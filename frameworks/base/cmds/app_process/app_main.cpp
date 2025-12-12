@@ -345,3 +345,185 @@ int main(int argc, char* const argv[])
         LOG_ALWAYS_FATAL("app_process: no class name or --zygote supplied.");
     }
 }
+
+
+/**
+ * @brief 主函数，用于启动 Android 应用进程（app_process）。
+ *
+ * 此函数解析命令行参数，并根据参数决定以何种模式启动进程：
+ * - Zygote 模式：用于孵化新的应用进程；
+ * - System Server 模式：用于启动系统服务；
+ * - Application 模式：用于直接运行一个 Java 类；
+ *
+ * 参数处理逻辑包括识别传递给虚拟机的选项、设置进程名（nice name）、确定主类名等。
+ *
+ * @param argc 命令行参数的数量。
+ * @param argv 命令行参数数组，其中 argv[0] 是程序名称。
+ * @return 返回执行结果状态码。通常 0 表示成功，非零表示错误。
+ */
+int mains(int argc, char* const argv[])
+{
+    // 如果调试日志启用，则打印完整的命令行参数列表
+    if (!LOG_NDEBUG) {
+        String8 argv_String;
+        for (int i = 0; i < argc; ++i) {
+            argv_String.append("\"");
+            argv_String.append(argv[i]);
+            argv_String.append("\" ");
+        }
+        ALOGV("app_process main with argv: %s", argv_String.string());
+    }
+
+    // 初始化运行时环境，传入初始参数块大小
+    AppRuntime runtime(argv[0], computeArgBlockSize(argc, argv));
+
+    // 忽略第一个参数（程序名），从第二个开始处理
+    argc--;
+    argv++;
+
+    /**
+     * 解析传递给虚拟机的参数：
+     * 所有以 '-' 开头但不是 "--" 的参数都会被当作 VM 参数；
+     * 遇到 "--" 或者第一个非 '-' 参数则停止；
+     * 特殊支持如 "-cp" 和 "-classpath" 这样的带空格参数的命令。
+     */
+
+    const char* spaced_commands[] = { "-cp", "-classpath" };
+    bool known_command = false;
+
+    int i;
+    for (i = 0; i < argc; i++) {
+        if (known_command == true) {
+            runtime.addOption(strdup(argv[i]));
+            ALOGV("app_process main add known option '%s'", argv[i]);
+            known_command = false;
+            continue;
+        }
+
+        for (int j = 0;
+             j < static_cast<int>(sizeof(spaced_commands) / sizeof(spaced_commands[0]));
+             ++j) {
+            if (strcmp(argv[i], spaced_commands[j]) == 0) {
+                known_command = true;
+                ALOGV("app_process main found known command '%s'", argv[i]);
+            }
+        }
+
+        if (argv[i][0] != '-') {
+            break;
+        }
+        if (argv[i][1] == '-' && argv[i][2] == 0) {
+            ++i; // 跳过 "--"
+            break;
+        }
+
+        runtime.addOption(strdup(argv[i]));
+        ALOGV("app_process main add option '%s'", argv[i]);
+    }
+
+    /**
+     * 解析内部运行时参数：
+     * 支持以下几种关键参数：
+     * --zygote：进入 Zygote 启动模式；
+     * --start-system-server：指示是否启动系统服务器；
+     * --application：表示是独立应用程序模式；
+     * --nice-name=xxx：指定当前进程的友好名称；
+     * 其他未识别参数将作为类名或传递给后续逻辑。
+     */
+
+    bool zygote = false;
+    bool startSystemServer = false;
+    bool application = false;
+    String8 niceName;
+    String8 className;
+
+//    # Zygote 64位进程（主流设备）
+//    service zygote /system/bin/app_process64 -Xzygote /system/bin --zygote --start-system-server --socket-name=zygote
+
+    ++i;  // 跳过无用的“父目录”参数
+    while (i < argc) {
+        const char* arg = argv[i++];
+        if (strcmp(arg, "--zygote") == 0) {
+            zygote = true;
+            niceName = ZYGOTE_NICE_NAME;
+        } else if (strcmp(arg, "--start-system-server") == 0) {
+            startSystemServer = true;
+        } else if (strcmp(arg, "--application") == 0) {
+            application = true;
+        } else if (strncmp(arg, "--nice-name=", 12) == 0) {
+            niceName.setTo(arg + 12);
+        } else if (strncmp(arg, "--", 2) != 0) {
+            className.setTo(arg);
+            break;
+        } else {
+            --i;
+            break;
+        }
+    }
+
+    /**
+     * 根据不同启动模式准备参数向量 args 并调用 runtime.start() 启动对应入口类：
+     * - 若为普通应用模式，则记录类名及剩余参数；
+     * - 若为 Zygote 模式，则收集所有剩余参数并附加 ABI 列表信息。
+     */
+
+    Vector<String8> args;
+    if (!className.isEmpty()) {
+        // 非 Zygote 模式下，只传递必要的参数给 RuntimeInit
+
+        args.add(application ? String8("application") : String8("tool"));
+        runtime.setClassNameAndArgs(className, argc - i, argv + i);
+
+        if (!LOG_NDEBUG) {
+            String8 restOfArgs;
+            char* const* argv_new = argv + i;
+            int argc_new = argc - i;
+            for (int k = 0; k < argc_new; ++k) {
+                restOfArgs.append("\"");
+                restOfArgs.append(argv_new[k]);
+                restOfArgs.append("\" ");
+            }
+            ALOGV("Class name = %s, args = %s", className.string(), restOfArgs.string());
+        }
+    } else {
+        // Zygote 模式下的初始化操作
+
+        maybeCreateDalvikCache();
+
+        if (startSystemServer) {
+            args.add(String8("start-system-server"));
+        }
+
+        char prop[PROP_VALUE_MAX];
+        if (property_get(ABI_LIST_PROPERTY, prop, NULL) == 0) {
+            LOG_ALWAYS_FATAL("app_process: Unable to determine ABI list from property %s.",
+                             ABI_LIST_PROPERTY);
+            return 11;
+        }
+
+        String8 abiFlag("--abi-list=");
+        abiFlag.append(prop);
+        args.add(abiFlag);
+
+        // 将其余所有参数都传递给 Zygote 的 main 方法
+        for (; i < argc; ++i) {
+            args.add(String8(argv[i]));
+        }
+    }
+
+    // 设置进程名（如果提供了 nice name）
+    if (!niceName.isEmpty()) {
+        runtime.setArgv0(niceName.string(), true /* setProcName */);
+    }
+
+    // 根据不同的启动标志选择对应的入口类进行启动
+    if (zygote) {
+        runtime.start("com.android.internal.os.ZygoteInit", args, zygote);
+    } else if (className) {
+        runtime.start("com.android.internal.os.RuntimeInit", args, zygote);
+    } else {
+        fprintf(stderr, "Error: no class name or --zygote supplied.\n");
+        app_usage();
+        LOG_ALWAYS_FATAL("app_process: no class name or --zygote supplied.");
+    }
+}

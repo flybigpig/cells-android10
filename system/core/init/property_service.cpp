@@ -100,16 +100,34 @@ struct PropertyAuditData {
     const char* name;
 };
 
+
+/**
+ * 初始化系统属性相关的目录和数据结构
+ *
+ * 该函数负责创建属性目录、初始化属性信息以及加载默认的属性配置。
+ * 主要包括创建属性存储目录、序列化属性信息、初始化属性区域以及加载默认属性信息文件。
+ *
+ * @note 该函数没有参数
+ * @note 该函数没有返回值
+ */
 void property_init() {
+    // 创建属性存储目录，设置权限为用户可读写执行，组和其他用户可执行
     mkdir("/dev/__properties__", S_IRWXU | S_IXGRP | S_IXOTH);
+
+    // 创建序列化的属性信息
     CreateSerializedPropertyInfo();
+
+    // 初始化系统属性区域，如果初始化失败则记录致命错误日志
     if (__system_property_area_init()) {
         LOG(FATAL) << "Failed to initialize property area";
     }
+
+    // 加载默认路径的序列化属性信息文件，如果加载失败则记录致命错误日志
     if (!property_info_area.LoadDefaultPath()) {
         LOG(FATAL) << "Failed to load serialized property info file";
     }
 }
+
 
 bool CanReadProperty(const std::string& source_context, const std::string& name) {
     const char* target_context = nullptr;

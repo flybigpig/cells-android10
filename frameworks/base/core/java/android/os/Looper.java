@@ -103,6 +103,11 @@ public final class Looper {
         prepare(true);
     }
 
+    /**
+     * 该方法用于为当前线程准备一个 `Looper` 实例。首先检查当前线程是否已存在 `Looper`，若存在则抛出异常；
+     * 否则创建一个新的 `Looper` 并存储到线程本地变量 `sThreadLocal` 中。`quitAllowed` 参数决定关联的消息队列是否允许退出。
+     * @param quitAllowed
+     */
     private static void prepare(boolean quitAllowed) {
         if (sThreadLocal.get() != null) {
             throw new RuntimeException("Only one Looper may be created per thread");
@@ -145,6 +150,15 @@ public final class Looper {
     }
 
     /**
+     * `loop()` 方法是 `Looper` 的核心消息循环，负责不断从 `MessageQueue` 取出消息并分发给对应的目标 `Handler` 处理。主要功能包括：
+     *
+     * 1. **线程检查**：确保当前线程已调用 `prepare()` 创建了 `Looper`。
+     * 2. **身份标识清理**：通过 `Binder.clearCallingIdentity()` 确保线程身份安全。
+     * 3. **慢日志检测**：支持通过系统属性设置慢消息阈值，并记录超时日志。
+     * 4. **消息分发与追踪**：调用 `msg.target.dispatchMessage()` 分发消息，同时支持性能追踪（如 systrace）和观察者模式监控。
+     * 5. **异常处理与资源回收**：捕获分发过程中的异常、恢复工作源 UID、结束 trace 标记，并在最后回收消息对象。
+     *
+     * 整个流程在一个无限循环中执行，直到消息队列退出。
      * Run the message queue in this thread. Be sure to call
      * {@link #quit()} to end the loop.
      */

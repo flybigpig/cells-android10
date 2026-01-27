@@ -3274,6 +3274,132 @@ public final class ActivityThread extends ClientTransactionHandler {
         return activity;
     }
 
+    /**
+     * 执行Activity的启动过程
+     *
+     * @param r ActivityClientRecord对象，包含Activity的启动信息和配置
+     * @param customIntent 自定义的Intent对象，用于替换原始Intent
+     * @return 启动成功的Activity实例，如果启动失败则抛出异常
+     */
+    private Activity performLaunchActivitys(ActivityClientRecord r, Intent customIntent) {
+        ActivityInfo aInfo = r.activityInfo;
+        if (r.packageInfo == null) {
+            r.packageInfo = getPackageInfo(aInfo.applicationInfo, r.compatInfo,
+                    Context.CONTEXT_INCLUDE_CODE);
+        }
+
+        // 解析并设置组件信息
+        ComponentName component = r.intent.getComponent();
+        if (component == null) {
+            component = r.intent.resolveActivity(
+                    mInitialApplication.getPackageManager());
+            r.intent.setComponent(component);
+        }
+
+        if (r.activityInfo.targetActivity != null) {
+            component = new ComponentName(r.activityInfo.packageName,
+                    r.activityInfo.targetActivity);
+        }
+
+        // 创建Activity的基础Context
+        ContextImpl appContext = createBaseContextForActivity(r);
+        Activity activity = null;
+        try {
+            java.lang.ClassLoader cl = appContext.getClassLoader();
+            activity = mInstrumentation.newActivity(
+                    cl, component.getClassName(), r.intent);
+            StrictMode.incrementExpectedActivityCount(activity.getClass());
+            r.intent.setExtrasClassLoader(cl);
+            r.intent.prepareToEnterProcess();
+            if (r.state != null) {
+                r.state.setClassLoader(cl);
+            }
+        } catch (Exception e) {
+            if (!mInstrumentation.onException(activity, e)) {
+                throw new RuntimeException(
+                        "Unable to instantiate activity " + component
+                                + ": " + e.toString(), e);
+            }
+        }
+
+        try {
+            // 创建Application实例并进行Activity的初始化
+            Application app = r.packageInfo.makeApplication(false, mInstrumentation);
+
+            if (localLOGV) Slog.v(TAG, "Performing launch of " + r);
+            if (localLOGV) Slog.v(
+                    TAG, r + ": app=" + app
+                            + ", appName=" + app.getPackageName()
+                            + ", pkg=" + r.packageInfo.getPackageName()
+                            + ", comp=" + r.intent.getComponent().toShortString()
+                            + ", dir=" + r.packageInfo.getAppDir());
+
+            if (activity != null) {
+                CharSequence title = r.activityInfo.loadLabel(appContext.getPackageManager());
+                Configuration config = new Configuration(mCompatConfiguration);
+                if (r.overrideConfig != null) {
+                    config.updateFrom(r.overrideConfig);
+                }
+                if (DEBUG_CONFIGURATION) Slog.v(TAG, "Launching activity "
+                        + r.activityInfo.name + " with config " + config);
+                Window window = null;
+                if (r.mPendingRemoveWindow != null && r.mPreserveWindow) {
+                    window = r.mPendingRemoveWindow;
+                    r.mPendingRemoveWindow = null;
+                    r.mPendingRemoveWindowManager = null;
+                }
+                appContext.setOuterContext(activity);
+                activity.attach(appContext, this, getInstrumentation(), r.token,
+                        r.ident, app, r.intent, r.activityInfo, title, r.parent,
+                        r.embeddedID, r.lastNonConfigurationInstances, config,
+                        r.referrer, r.voiceInteractor, window, r.configCallback,
+                        r.assistToken);
+
+                if (customIntent != null) {
+                    activity.mIntent = customIntent;
+                }
+                r.lastNonConfigurationInstances = null;
+                checkAndBlockForNetworkAccess();
+                activity.mStartedActivity = false;
+                int theme = r.activityInfo.getThemeResource();
+                if (theme != 0) {
+                    activity.setTheme(theme);
+                }
+
+                activity.mCalled = false;
+                if (r.isPersistable()) {
+                    mInstrumentation.callActivityOnCreate(activity, r.state, r.persistentState);
+                } else {
+                    mInstrumentation.callActivityOnCreate(activity, r.state);
+                }
+                if (!activity.mCalled) {
+                    throw new SuperNotCalledException(
+                            "Activity " + r.intent.getComponent().toShortString() +
+                                    " did not call through to super.onCreate()");
+                }
+                r.activity = activity;
+            }
+            r.setState(ON_CREATE);
+
+            // 线程安全地将Activity记录添加到活动管理器中
+            synchronized (mResourcesManager) {
+                mActivities.put(r.token, r);
+            }
+
+        } catch (SuperNotCalledException e) {
+            throw e;
+
+        } catch (Exception e) {
+            if (!mInstrumentation.onException(activity, e)) {
+                throw new RuntimeException(
+                        "Unable to start activity " + component
+                                + ": " + e.toString(), e);
+            }
+        }
+
+        return activity;
+    }
+
     @Override
     public void handleStartActivity(ActivityClientRecord r,
             PendingTransactionActions pendingActions) {

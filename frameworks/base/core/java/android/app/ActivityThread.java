@@ -215,6 +215,17 @@ final class RemoteServiceException extends AndroidRuntimeException {
  * manager requests.
  *
  * {@hide}
+ *
+ * 在 app 的冷启动流程中，AMS 会通过 startProcess() 方法一路调到 ProcessList.startProcessLocked() 方法，
+ * 并设置 entryPoint 为ActivityThread；并通过 socket 通信把消息发送给 Zygote 进程。
+ *
+ * Zygote 进程的 ZygoteServer 接到信息后，解析出传过来的 entryPoint
+ * 并保存在 Arguments 的成员变量 startClass 中；最终通过反射的方式去反射其 main() 方法。也就是
+ * ActivityThread.main() 。
+ *
+ * 所以 ActivityThread 是 app 进程的主入口。
+ *
+ *
  */
 public final class ActivityThread extends ClientTransactionHandler {
     /** @hide */

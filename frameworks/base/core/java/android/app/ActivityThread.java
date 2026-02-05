@@ -3504,6 +3504,8 @@ public final class ActivityThread extends ClientTransactionHandler {
 
     /**
      * Extended implementation of activity launch. Used when server requests a launch or relaunch.
+     *
+     * LaunchActivityItem.ActivityClientRecord --> this.handleLaunchActivity
      */
     @Override
     public Activity handleLaunchActivity(ActivityClientRecord r,
@@ -3534,6 +3536,7 @@ public final class ActivityThread extends ClientTransactionHandler {
         // Hint the GraphicsEnvironment that an activity is launching on the process.
         GraphicsEnvironment.hintActivityLaunch();
 
+        // ActivityClientRecord record --> Activity.performLaunchActivity
         final Activity a = performLaunchActivity(r, customIntent);
 
         if (a != null) {

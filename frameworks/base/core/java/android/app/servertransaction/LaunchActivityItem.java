@@ -72,15 +72,32 @@ public class LaunchActivityItem extends ClientTransactionItem {
         client.updatePendingConfiguration(mCurConfig);
     }
 
+    /**
+     * 执行客户端事务处理，启动指定的Activity。
+     *
+     * <p>该方法通过创建一个ActivityClientRecord实例来封装Activity的相关信息，
+     * 并调用客户端处理器来启动该Activity。整个过程使用Trace进行性能追踪。</p>
+     *
+     * @param client 客户端事务处理器，用于处理Activity的生命周期事件。
+     * @param token Binder令牌，标识目标Activity。
+     * @param pendingActions 待处理的事务操作集合。
+     */
     @Override
     public void execute(ClientTransactionHandler client, IBinder token,
-            PendingTransactionActions pendingActions) {
+                        PendingTransactionActions pendingActions) {
+        // 开始性能追踪，标记为"activityStart"
         Trace.traceBegin(TRACE_TAG_ACTIVITY_MANAGER, "activityStart");
+
+        // 创建ActivityClientRecord实例，封装Activity的启动相关信息
         ActivityClientRecord r = new ActivityClientRecord(token, mIntent, mIdent, mInfo,
                 mOverrideConfig, mCompatInfo, mReferrer, mVoiceInteractor, mState, mPersistentState,
                 mPendingResults, mPendingNewIntents, mIsForward,
                 mProfilerInfo, client, mAssistToken);
+
+        // 调用客户端处理器启动Activity
         client.handleLaunchActivity(r, pendingActions, null /* customIntent */);
+
+        // 结束性能追踪
         Trace.traceEnd(TRACE_TAG_ACTIVITY_MANAGER);
     }
 

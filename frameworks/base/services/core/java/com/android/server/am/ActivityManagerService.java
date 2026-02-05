@@ -2250,6 +2250,86 @@ public class ActivityManagerService extends IActivityManager.Stub
     }
 
     /**
+     * Lifecycle 类是 ActivityManagerService 的生命周期管理器，继承自 SystemService。
+     * 它负责启动、初始化和清理 ActivityManagerService，并在系统启动的不同阶段执行相应的操作。
+     */
+    public static final class Lifecycles extends SystemService {
+        private final ActivityManagerService mService;
+        private static ActivityTaskManagerService sAtm;
+
+        /**
+         * 构造函数，用于创建 Lifecycle 实例。
+         *
+         * @param context 系统上下文，用于初始化服务。
+         */
+        public Lifecycle(Context context) {
+            super(context);
+            mService = new ActivityManagerService(context, sAtm);
+        }
+
+        /**
+         * 启动 ActivityManagerService 并返回其实例。
+         *
+         * @param ssm SystemServiceManager 实例，用于管理系统服务的启动。
+         * @param atm ActivityTaskManagerService 实例，用于任务管理。
+         * @return 返回已启动的 ActivityManagerService 实例。
+         */
+        public static ActivityManagerService startService(
+                SystemServiceManager ssm, ActivityTaskManagerService atm) {
+            sAtm = atm;
+            return ssm.startService(ActivityManagerService.Lifecycle.class).getService();
+        }
+
+        /**
+         * 在系统服务启动时调用，用于启动 ActivityManagerService。
+         */
+        @Override
+        public void onStart() {
+            mService.start();
+        }
+
+        /**
+         * 在系统启动的不同阶段调用，根据阶段执行不同的初始化操作。
+         *
+         * @param phase 当前启动阶段的标识符。
+         */
+        @Override
+        public void onBootPhase(int phase) {
+            mService.mBootPhase = phase;
+            if (phase == PHASE_SYSTEM_SERVICES_READY) {
+                // 系统服务准备就绪时，通知电池统计服务和其他服务
+                mService.mBatteryStatsService.systemServicesReady();
+                mService.mServices.systemServicesReady();
+            } else if (phase == PHASE_ACTIVITY_MANAGER_READY) {
+                // ActivityManager 准备就绪时，启动广播观察者
+                mService.startBroadcastObservers();
+            } else if (phase == PHASE_THIRD_PARTY_APPS_CAN_START) {
+                // 第三方应用可以启动时，通知包监控服务
+                mService.mPackageWatchdog.onPackagesReady();
+            }
+        }
+
+        /**
+         * 在用户数据清理时调用，用于清理与指定用户相关的资源。
+         *
+         * @param userId 需要清理的用户 ID。
+         */
+        @Override
+        public void onCleanupUser(int userId) {
+            mService.mBatteryStatsService.onCleanupUser(userId);
+        }
+
+        /**
+         * 获取当前管理的 ActivityManagerService 实例。
+         *
+         * @return 返回 ActivityManagerService 实例。
+         */
+        public ActivityManagerService getService() {
+            return mService;
+        }
+    }
+
+    /**
      * Encapsulates global settings related to hidden API enforcement behaviour, including tracking
      * the latest value via a content observer.
      */

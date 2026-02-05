@@ -1663,6 +1663,8 @@ public final class ActivityThread extends ClientTransactionHandler {
 
         @Override
         public void scheduleTransaction(ClientTransaction transaction) throws RemoteException {
+            // 是应用进程 Binder 线程向主线程转发事务的核心节点，执行后会完成
+            // 「事务绑定执行器→主线程消息入队→主线程消费消息→事务执行器启动执行」的全链路流转，最终触发 Activity 生命周期的实际执行。
             ActivityThread.this.scheduleTransaction(transaction);
         }
 

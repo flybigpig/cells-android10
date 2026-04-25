@@ -318,6 +318,63 @@ err_no_vma:
 	return vma ? -ENOMEM : -ESRCH;
 }
 
+static struct binder_buffer *binder_alloc_new_buf_lockeds(
+        struct binder_alloc *alloc, size_t data_size,
+        size_t offsets_size, size_t extra_buffers_size, int is_async)
+{
+    size = max(size, sizeof(void *));  // 最小对齐到指针大小
+
+    // ══════════════════════════════════════
+    // 第一步：最佳适应算法 (Best Fit) 在空闲红黑树中查找
+    // ══════════════════════════════════════
+    while (n) {
+        buffer = rb_entry(n, struct binder_buffer, rb_node);
+        buffer_size = binder_alloc_buffer_size(alloc, buffer);
+
+        if (size < buffer_size) {
+            best_fit = n;       // 记录候选
+            n = n->rb_left;     // 继续找更小的（更合适的）
+        } else if (size > buffer_size) {
+            n = n->rb_right;    // 当前太小，找更大的
+        } else {
+            best_fit = n; break;// 完美匹配！
+        }
+    }
+
+    // ══════════════════════════════════════
+    // 第二步：按需映射物理页面 (Lazy Allocation!)
+    // ══════════════════════════════════════
+    has_page_addr = (void __user *)
+    (((uintptr_t)buffer->user_data + buffer_size) & PAGE_MASK);
+    end_page_addr = (void __user *)PAGE_ALIGN(
+            (uintptr_t)buffer->user_data + size);
+
+    // ★ 关键：只为新需要的部分分配物理页
+    ret = binder_update_page_range(alloc, 1,
+                                   PAGE_ALIGN((uintptr_t)buffer->user_data),
+                                   end_page_addr);
+
+    // ══════════════════════════════════════
+    // 第三步：如果 buffer 有剩余，拆分成两个
+    // ══════════════════════════════════════
+    if (buffer_size != size) {
+        new_buffer = kzalloc(sizeof(*buffer), GFP_KERNEL);
+        new_buffer->user_data = (u8 __user *)buffer->user_data + size;
+        list_add(&new_buffer->entry, &buffer->entry);  // 插入链表
+        new_buffer->free = 1;
+        binder_insert_free_buffer(alloc, new_buffer);  // 剩余部分放回空闲树
+    }
+
+    // ══════════════════════════════════════
+    // 第四步：标记为已分配
+    // ══════════════════════════════════════
+    rb_erase(best_fit, &alloc->free_buffers);          // 从空闲树移除
+    buffer->free = 0;
+    binder_insert_allocated_buffer_locked(alloc, buffer);// 加入已分配树
+
+    return buffer;
+}
+// 物理页管理
 static struct binder_buffer *binder_alloc_new_buf_locked(
 				struct binder_alloc *alloc,
 				size_t data_size,
@@ -365,7 +422,7 @@ static struct binder_buffer *binder_alloc_new_buf_locked(
 	}
 
 	/* Pad 0-size buffers so they get assigned unique addresses */
-	size = max(size, sizeof(void *));
+	size = max(size, sizeof(void *));   // 最小对齐到指针大小
 
 	while (n) {
 		buffer = rb_entry(n, struct binder_buffer, rb_node);
@@ -637,6 +694,38 @@ void binder_alloc_free_buf(struct binder_alloc *alloc,
 	mutex_unlock(&alloc->mutex);
 }
 
+
+int binder_alloc_mmap_handlers(struct binder_alloc *alloc,
+                               struct vm_area_struct *vma)
+{
+    // ① 记录用户空间缓冲区起始地址
+    alloc->buffer = (void __user *)vma->vm_start;  // 虚拟地址起点
+
+    // ② 分配页表数组（每页一个 entry，用于跟踪物理页）
+    alloc->pages = kzalloc(sizeof(*alloc->pages) *
+                           ((vma->vm_end - vma->vm_start) / PAGE_SIZE), GFP_KERNEL);
+
+    // ③ 记录映射大小
+    alloc->buffer_size = vma->vm_end - vma->vm_start;  // 通常为 4MB
+
+    // ④ 创建一个覆盖整个区域的初始空闲 buffer
+    buffer = kzalloc(sizeof(*buffer), GFP_KERNEL);
+    buffer->user_data = alloc->buffer;          // 指向用户空间起始
+    list_add(&buffer->entry, &alloc->buffers);  // 加入链表
+    buffer->free = 1;
+    binder_insert_free_buffer(alloc, buffer);   // 插入空闲红黑树
+
+    // ⑤ 异步事务最多使用一半空间（防止单个异步事务耗尽所有内存）
+    alloc->free_async_space = alloc->buffer_size / 2;  // 2MB
+
+    // ⑥ 保存 VMA 引用和 mm_struct（内存描述符）
+    alloc->vma = vma;
+    alloc->vma_vm_mm = vma->vm_mm;
+    atomic_inc(&alloc->vma_vm_mm->mm_count);  // 增加 mm 引用计数
+
+    return 0;
+}
+
 /**
  * binder_alloc_mmap_handler() - map virtual address space for proc
  * @alloc:	alloc structure for this proc
@@ -649,6 +738,8 @@ void binder_alloc_free_buf(struct binder_alloc *alloc,
  *      0 = success
  *      -EBUSY = address space already mapped
  *      -ENOMEM = failed to map memory to given address space
+ *
+ *      关键点：mmap 本身并不分配物理页，只是建立虚拟地址空间的映射关系！
  */
 int binder_alloc_mmap_handler(struct binder_alloc *alloc,
 			      struct vm_area_struct *vma)
@@ -665,6 +756,7 @@ int binder_alloc_mmap_handler(struct binder_alloc *alloc,
 	}
 	// 映射存储用户空间的地址
 	alloc->buffer = (void __user *)vma->vm_start;
+
 	mutex_unlock(&binder_alloc_mmap_lock);
 	// 分配页表数组
 	alloc->pages = kzalloc(sizeof(alloc->pages[0]) *
@@ -678,6 +770,7 @@ int binder_alloc_mmap_handler(struct binder_alloc *alloc,
 	//  映射大小
 	alloc->buffer_size = vma->vm_end - vma->vm_start;
 
+    // ④ 创建一个覆盖整个区域的初始空闲 buffer
 	//  创建并初始化缓冲区
 	buffer = kzalloc(sizeof(*buffer), GFP_KERNEL);
 	if (!buffer) {
@@ -687,12 +780,17 @@ int binder_alloc_mmap_handler(struct binder_alloc *alloc,
 	}
 
 	// 缓存区指向用户空间地址
-	buffer->user_data = alloc->buffer;
+	buffer->user_data = alloc->buffer;   // 缓存区定位用户空间地址
+    // 加入链表
 	list_add(&buffer->entry, &alloc->buffers);
 	buffer->free = 1;
+    // 插入空闲红黑树
 	binder_insert_free_buffer(alloc, buffer);
+
+    // ⑤ 异步事务最多使用一半空间（防止单个异步事务耗尽所有内存）
 	alloc->free_async_space = alloc->buffer_size / 2;
 	barrier();
+    // ⑥ 保存 VMA 引用和 mm_struct（内存描述符）
 	alloc->vma = vma;
 	alloc->vma_vm_mm = vma->vm_mm;
 	/* Same as mmgrab() in later kernel versions */

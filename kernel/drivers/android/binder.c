@@ -5456,6 +5456,29 @@ static const struct vm_operations_struct binder_vm_ops = {
         .fault = binder_vm_fault,
 };
 
+static int binder_mmaps(struct file *filp, struct vm_area_struct *vma)
+{
+    struct binder_proc *proc = filp->private_data;
+
+    // ① 限制最大映射大小为 4MB（防止恶意进程占用过多内存）
+    if ((vma->vm_end - vma->vm_start) > SZ_4M)
+        vma->vm_end = vma->vm_start + SZ_4M;
+
+    // ② 设置 VMA 标志：
+    //    VM_DONTCOPY - fork时不复制（子进程不能继承）
+    //    VM_MIXEDMAP - 混合映射（支持非连续物理页）
+    //    去掉 VM_MAYWRITE - 用户态不可直接写
+    vma->vm_flags |= VM_DONTCOPY | VM_MIXEDMAP;
+    vma->vm_flags &= ~VM_MAYWRITE;
+
+    // ③ 注册 VMA 操作回调（open/close/fault）
+    vma->vm_ops = &binder_vm_ops;
+    vma->vm_private_data = proc;
+
+    // ④ 调用分配器处理 mmap
+    ret = binder_alloc_mmap_handler(&proc->alloc, vma);
+}
+
 /**
  * 地址映射
  * @param filp

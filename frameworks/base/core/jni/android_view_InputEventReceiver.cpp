@@ -48,6 +48,10 @@ static struct {
 } gInputEventReceiverClassInfo;
 
 
+/**
+ *  {@link InputEvent.md   }
+ *
+ */
 class NativeInputEventReceiver : public LooperCallback {
 public:
     NativeInputEventReceiver(JNIEnv* env,
@@ -312,6 +316,13 @@ status_t NativeInputEventReceiver::consumeEvents(JNIEnv* env,
                 if (kDebugDispatchCycle) {
                     ALOGD("channel '%s' ~ Dispatching input event.", getInputChannelName().c_str());
                 }
+                /**
+                 *  实际分发目标
+                    InputEventReceiver 的子类是 ViewRootImpl.WindowInputEventReceiver，
+                    其 dispatchInputEvent 实现会：
+                        将 KeyEvent 分发给 ViewPostImeInputStage 进行 View 层级的事件处理
+                        将 MotionEvent 分发到目标 View 的 dispatchTouchEvent() → onTouchEvent()
+                 */
                 env->CallVoidMethod(receiverObj.get(),
                         gInputEventReceiverClassInfo.dispatchInputEvent, seq, inputEventObj);
                 if (env->ExceptionCheck()) {

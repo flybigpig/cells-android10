@@ -1,0 +1,8 @@
+# yourservice.rc
+service your_service /system/bin/yourservice
+    class main              # 或 core (早期启动)
+    user root               # 或 system/media/nobody
+    group root system       # 根据权限需求
+    ioprio rt 4             # 如需实时优先级（可选）
+    # disabled              # 如需手动启动（可选）
+    writepid /dev/cpuset/foreground/tasks  # 前台任务优化（可选）

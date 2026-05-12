@@ -30,28 +30,30 @@
 #include "ResourceManagerService.h"
 
 using namespace android;
-
+// native 服务启动
 int main(int argc __unused, char **argv __unused) {
-    OtherSystemServiceLoopRun();
-    signal(SIGPIPE, SIG_IGN);
+    OtherSystemServiceLoopRun();  // 自定义初始化
+    signal(SIGPIPE, SIG_IGN);     // 忽略管道信号
 
+    // 1️⃣ 初始化 Binder 进程状态
+    sp<ProcessState> proc(ProcessState::self());
 
-    //
-    sp <ProcessState> proc(ProcessState::self());
-
-    sp <IServiceManager> sm(defaultServiceManager());
-
+    // 2️⃣ 获取 ServiceManager
+    sp<IServiceManager> sm(defaultServiceManager());
     ALOGI("ServiceManager: %p", sm.get());
 
+    // 3️⃣ 系统组件初始化（ICU国际化支持）
     AIcu_initializeIcuOrDie();
 
-    MediaPlayerService::instantiate();
+    // 4️⃣ 注册多个服务到 ServiceManager
+    MediaPlayerService::instantiate();      // 媒体播放服务
+    ResourceManagerService::instantiate();  // 资源管理服务
 
-    ResourceManagerService::instantiate();
-
+    // 5️⃣ 注册扩展服务
     registerExtensions();
 
+    // 6️⃣ 启动 Binder 线程池并加入主循环
     ProcessState::self()->startThreadPool();
-
-    IPCThreadState::self()->joinThreadPool();
+    IPCThreadState::self()->joinThreadPool();  // 阻塞等待请求
 }
+

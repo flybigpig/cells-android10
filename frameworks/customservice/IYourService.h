@@ -7,7 +7,7 @@
 #include <binder/IInterface.h>
 #include <binder/Parcel.h>
 #include <utils/String16.h>
-
+// 通信协议接口
 namespace android{
 
     class IYourService : public IInterface{

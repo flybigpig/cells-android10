@@ -2,7 +2,7 @@
 #define LOG_TAG "YourService"
 #include <utils/Log.h>
 #include "YourService.h"
-
+// 客户端
 namespace android {
 
 YourService::YourService() : mStatus(0) {

@@ -3,6 +3,7 @@
 #include <utils/Log.h>
 #include "IYourService.h"
 
+// 服务端 cpp
 namespace android {
 
 IMPLEMENT_META_INTERFACE(YourService, "your.service.name");

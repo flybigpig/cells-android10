@@ -237,6 +237,7 @@ import android.view.WindowManager.RemoveContentMode;
 import android.view.WindowManager.TransitionType;
 import android.view.WindowManagerGlobal;
 import android.view.WindowManagerPolicyConstants.PointerEventListener;
+import javafx.concurrent.Task;
 
 import com.android.internal.R;
 import com.android.internal.annotations.VisibleForTesting;
@@ -283,9 +284,18 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-/** {@hide} */
+/** {@hide}
+ * 
+ * 
+ *  继承 IWindowManager.Stub：这是一个 Binder 服务，客户端通过 IPC 调用
+    实现 Watchdog.Monitor：被系统看门狗监控，防止死锁
+    实现 WindowManagerFuncs：提供窗口策略回调接口
+ * 
+ */
 public class WindowManagerService extends IWindowManager.Stub
-        implements Watchdog.Monitor, WindowManagerPolicy.WindowManagerFuncs {
+        implements Watchdog.Monitor, 
+        WindowManagerPolicy.WindowManagerFuncs 
+    {
     private static final String TAG = TAG_WITH_CLASS_NAME ? "WindowManagerService" : TAG_WM;
 
     static final int LAYOUT_REPEAT_THRESHOLD = 4;

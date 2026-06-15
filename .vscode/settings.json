@@ -10,7 +10,7 @@
     
     // 关闭文件保存时检查
     "editor.codeActionsOnSave": {
-        "source.fixAll": false
+        "source.fixAll": "never"
     },
 
     // 关闭波浪线

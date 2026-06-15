@@ -19,6 +19,13 @@ enabledAutoRun: true
 - `kernel/` — Linux 内核（msm-4.9 分支，Qualcomm 骁龙平台）
 - `libhardware/` — HAL 硬件抽象层
 - `cells/` — VP 管理守护进程（自定义模块）
+- `packages/` — 第三方应用
+- `hardware/` — 硬件驱动模块
+- `cells/` — 自定义模块
+- `external/` — 第三方模块
+- `tools/` — 工具
+- `external/libcxx/` — C++ 11 标准库
+- 
 
 ## 关联知识库
 以下外部知识库可在分析时作为补充参考：

@@ -20,6 +20,11 @@ enabledAutoRun: true
 - `libhardware/` — HAL 硬件抽象层
 - `cells/` — VP 管理守护进程（自定义模块）
 
+## 关联知识库
+以下外部知识库可在分析时作为补充参考：
+
+- **[obsidian](https://github.com/flybigpig/obsidian)** — 关联的 Obsidian 知识库，可能包含 Android 源码分析笔记、架构图、调用链梳理等结构化知识。在进行源码解读时，如涉及已整理的专题，优先查阅此知识库中对应的笔记，确保分析结论一致、不重复劳动。
+
 ## 核心知识领域
 
 ### 1. Frameworks 层 (frameworks/)

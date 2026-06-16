@@ -36,66 +36,66 @@ enabledAutoRun: true
 
 ### 1. Frameworks 层 (frameworks/)
 - **消息机制**:
-    - C++ Looper (epoll): `system/core/libutils/Looper.cpp`
-    - JNI 桥接层: `frameworks/base/core/jni/android_os_MessageQueue.cpp`
-    - Java Looper/Handler/MessageQueue: `frameworks/base/core/java/android/os/Looper.java`, `Handler.java`, `MessageQueue.java`
+    - C++ Looper (epoll): [Looper.cpp](../../system/core/libutils/Looper.cpp)
+    - JNI 桥接层: [android_os_MessageQueue.cpp](../../frameworks/base/core/jni/android_os_MessageQueue.cpp)
+    - Java Looper/Handler/MessageQueue: [Looper.java](../../frameworks/base/core/java/android/os/Looper.java), [Handler.java](../../frameworks/base/core/java/android/os/Handler.java), [MessageQueue.java](../../frameworks/base/core/java/android/os/MessageQueue.java)
 - **四大组件**:
-    - ActivityManagerService: `frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java`
-    - PackageManagerService: `frameworks/base/services/core/java/com/android/server/pm/PackageManagerService.java`
-    - WindowManagerGlobal: `frameworks/base/core/java/android/view/WindowManagerGlobal.java`
+    - ActivityManagerService: [ActivityManagerService.java](../../frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java)
+    - PackageManagerService: [PackageManagerService.java](../../frameworks/base/services/core/java/com/android/server/pm/PackageManagerService.java)
+    - WindowManagerGlobal: [WindowManagerGlobal.java](../../frameworks/base/core/java/android/view/WindowManagerGlobal.java)
 - **Binder IPC**:
-    - BpBinder: `frameworks/native/libs/binder/BpBinder.cpp`
-    - IPCThreadState: `frameworks/native/libs/binder/IPCThreadState.cpp`
-    - ProcessState: `frameworks/native/libs/binder/ProcessState.cpp`
-    - HwBinder: `system/libhwbinder/IPCThreadState.cpp`, `ProcessState.cpp`
+    - BpBinder: [BpBinder.cpp](../../frameworks/native/libs/binder/BpBinder.cpp)
+    - IPCThreadState: [IPCThreadState.cpp](../../frameworks/native/libs/binder/IPCThreadState.cpp)
+    - ProcessState: [ProcessState.cpp](../../frameworks/native/libs/binder/ProcessState.cpp)
+    - HwBinder: [IPCThreadState.cpp](../../system/libhwbinder/IPCThreadState.cpp), [ProcessState.cpp](../../system/libhwbinder/ProcessState.cpp)
 - **输入系统**:
-    - InputDispatcher: `frameworks/native/services/inputflinger/InputDispatcher.cpp`
-    - InputConsumer: `frameworks/base/services/core/java/com/android/server/wm/InputConsumerImpl.java`
-    - ViewRootImpl: `frameworks/base/core/java/android/view/ViewRootImpl.java`
+    - InputDispatcher: [InputDispatcher.cpp](../../frameworks/native/services/inputflinger/InputDispatcher.cpp)
+    - InputConsumer: [InputConsumerImpl.java](../../frameworks/base/services/core/java/com/android/server/wm/InputConsumerImpl.java)
+    - ViewRootImpl: [ViewRootImpl.java](../../frameworks/base/core/java/android/view/ViewRootImpl.java)
 - **图形系统**:
-    - SurfaceFlinger: `frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp`
-    - BufferQueue: `frameworks/native/libs/gui/BufferQueue.cpp`
-    - Choreographer: `frameworks/base/core/java/android/view/Choreographer.java`
+    - SurfaceFlinger: [SurfaceFlinger.cpp](../../frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp)
+    - BufferQueue: [BufferQueue.cpp](../../frameworks/native/libs/gui/BufferQueue.cpp)
+    - Choreographer: [Choreographer.java](../../frameworks/base/core/java/android/view/Choreographer.java)
 - **音频系统**:
-    - AudioFlinger: `frameworks/av/services/audioflinger/AudioFlinger.cpp`
-    - AudioPolicyService: `frameworks/av/services/audiopolicy/service/AudioPolicyService.cpp`
+    - AudioFlinger: [AudioFlinger.cpp](../../frameworks/av/services/audioflinger/AudioFlinger.cpp)
+    - AudioPolicyService: [AudioPolicyService.cpp](../../frameworks/av/services/audiopolicy/service/AudioPolicyService.cpp)
 - **JNI 桥接**:
-    - AndroidRuntime: `frameworks/base/core/jni/AndroidRuntime.cpp`
+    - AndroidRuntime: [AndroidRuntime.cpp](../../frameworks/base/core/jni/AndroidRuntime.cpp)
 
 ### 2. System 层 (system/)
 - **Init 系统**:
-    - init 主程序: `system/core/init/init.cpp`
-    - 属性服务: `system/core/init/property_service.cpp`
-    - ueventd: `system/core/init/ueventd.cpp`
+    - init 主程序: [init.cpp](../../system/core/init/init.cpp)
+    - 属性服务: [property_service.cpp](../../system/core/init/property_service.cpp)
+    - ueventd: [ueventd.cpp](../../system/core/init/ueventd.cpp)
 - **Core 基础库**:
-    - libutils(Looper, RefBase): `system/core/libutils/Looper.cpp`, `RefBase.cpp`
+    - libutils(Looper, RefBase): [Looper.cpp](../../system/core/libutils/Looper.cpp), [RefBase.cpp](../../system/core/libutils/RefBase.cpp)
 - **Vold**:
-    - 入口: `system/vold/main.cpp`
-    - VolumeManager: `system/vold/VolumeManager.cpp`
-    - VoldNativeService: `system/vold/VoldNativeService.cpp`
-    - NetlinkManager: `system/vold/NetlinkManager.cpp`
-    - Disk/Volume 模型: `system/vold/model/Disk.cpp`, `VolumeBase.cpp`
-    - 加密: `system/vold/FsCrypt.cpp`
+    - 入口: [main.cpp](../../system/vold/main.cpp)
+    - VolumeManager: [VolumeManager.cpp](../../system/vold/VolumeManager.cpp)
+    - VoldNativeService: [VoldNativeService.cpp](../../system/vold/VoldNativeService.cpp)
+    - NetlinkManager: [NetlinkManager.cpp](../../system/vold/NetlinkManager.cpp)
+    - Disk/Volume 模型: [Disk.cpp](../../system/vold/model/Disk.cpp), [VolumeBase.cpp](../../system/vold/model/VolumeBase.cpp)
+    - 加密: [FsCrypt.cpp](../../system/vold/FsCrypt.cpp)
 - **Netd**:
-    - 入口: `system/netd/server/main.cpp`
-    - Firewall: `system/netd/server/FirewallController.cpp`
-    - Bandwidth: `system/netd/server/BandwidthController.cpp`
-    - DNS: `system/netd/resolv/DnsProxyListener.cpp`
+    - 入口: [main.cpp](../../system/netd/server/main.cpp)
+    - Firewall: [FirewallController.cpp](../../system/netd/server/FirewallController.cpp)
+    - Bandwidth: [BandwidthController.cpp](../../system/netd/server/BandwidthController.cpp)
+    - DNS: [DnsProxyListener.cpp](../../system/netd/resolv/DnsProxyListener.cpp)
 - **SELinux**:
-    - sepolicy 规则目录: `system/sepolicy/`
+    - sepolicy 规则目录: [sepolicy/](../../system/sepolicy/)
 - **调试系统**:
-    - tombstoned: `system/core/debuggerd/tombstoned/tombstoned.cpp`
-    - debuggerd: `system/core/debuggerd/debuggerd.cpp`
+    - tombstoned: [tombstoned.cpp](../../system/core/debuggerd/tombstoned/tombstoned.cpp)
+    - debuggerd: [debuggerd.cpp](../../system/core/debuggerd/debuggerd.cpp)
 
 ### 3. Kernel 层 (kernel/)
 - **Binder 驱动**:
-    - binder.c: `kernel/drivers/android/binder.c`
-    - binder_alloc.c: `kernel/drivers/android/binder_alloc.c`
+    - binder.c: [binder.c](../../kernel/drivers/android/binder.c)
+    - binder_alloc.c: [binder_alloc.c](../../kernel/drivers/android/binder_alloc.c)
 - **内存管理**:
-    - Low Memory Killer: `kernel/drivers/staging/android/lowmemorykiller.c`
+    - Low Memory Killer: [lowmemorykiller.c](../../kernel/drivers/staging/android/lowmemorykiller.c)
 
 ### 4. HAL 层 (libhardware/)
-- 硬件模块加载机制: `libhardware/hardware.c` (hw_get_module)
+- 硬件模块加载机制: [hardware.c](../../libhardware/hardware.c) (hw_get_module)
 - HIDL → AIDL 迁移过渡期架构
 - 关键 HAL: audio, camera, sensors, graphics, bluetooth
 

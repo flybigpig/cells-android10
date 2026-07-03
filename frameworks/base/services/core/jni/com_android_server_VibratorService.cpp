@@ -59,36 +59,55 @@ inline Return<R> NullptrStatus() {
 // Helper used to transparently deal with the vibrator HAL becoming unavailable.
 template<class R, class I, class... Args0, class... Args1>
 Return<R> halCall(Return<R> (I::* fn)(Args0...), Args1&&... args1) {
-    // Assume that if getService returns a nullptr, HAL is not available on the
-    // device.
+    // 模板参数说明：
+    // R: HAL 方法的返回值类型
+    // I: HAL 接口类类型 (如 IVibrator)
+    // Args0: HAL 成员函数指针所需的参数类型包
+    // Args1: 实际传入的参数类型包（用于完美转发）
+
+    // 假设如果 getService 返回 nullptr，则设备上不可用该 HAL 服务。
+    // 使用 static 局部变量，确保 HAL 代理对象只初始化一次（懒加载单例模式）
     static sp<I> sHal = I::getService();
+    // 记录 HAL 服务的可用性状态，避免后续重复查询
     static bool sAvailable = sHal != nullptr;
 
+    // 如果设备不支持该 HAL 服务，直接返回一个代表空指针状态的 Return 对象
     if (!sAvailable) {
         return NullptrStatus<R>();
     }
 
-    // Return<R> doesn't have a default constructor, so make a Return<R> with
-    // STATUS::EX_NONE.
+    // Return<R> 没有默认构造函数，因此需要显式构造一个 Return<R> 对象，
+    // 并初始化为无异常状态 (EX_NONE)，以便在后续的循环中可以被安全赋值。
     using ::android::hardware::Status;
     Return<R> ret{Status::fromExceptionCode(Status::EX_NONE)};
 
-    // Note that ret is guaranteed to be changed after this loop.
+    // 注意：ret 在此循环之后保证会被修改。
+    // 循环尝试调用 HAL 方法，最多尝试 NUM_TRIES 次
     for (int i = 0; i < NUM_TRIES; ++i) {
+        // 使用三元运算符检查 sHal 是否为空：
+        // - 如果为空，返回 NullptrStatus
+        // - 如果不为空，通过成员函数指针调用 HAL 方法
+        // (*sHal.*fn) 是解引用智能指针并调用其成员函数指针的标准写法
+        // std::forward<Args1>(args1)... 实现了完美转发，保留了传入参数的左值/右值属性
         ret = (sHal == nullptr) ? NullptrStatus<R>()
                 : (*sHal.*fn)(std::forward<Args1>(args1)...);
 
+        // 如果 HAL 调用成功（没有错误或异常），跳出重试循环
         if (ret.isOk()) {
             break;
         }
 
+        // 调用失败，打印错误日志，准备重试
         ALOGE("Failed to issue command to vibrator HAL. Retrying.");
-        // Restoring connection to the HAL.
+
+        // 尝试恢复与 HAL 服务的连接。
+        // 使用 tryGetService 而不是 getService，因为 tryGetService 是非阻塞的，
+        // 如果服务未就绪会立即返回 nullptr，而 getService 会阻塞等待服务上线。
         sHal = I::tryGetService();
     }
+    // 返回最终的调用结果（可能是成功的结果，也可能是重试 NUM_TRIES 次后依然失败的结果）
     return ret;
 }
-
 template<class R>
 bool isValidEffect(jlong effect) {
     if (effect < 0) {

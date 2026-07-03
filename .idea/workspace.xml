@@ -5,16 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="687337fc-7778-458b-8adb-a2b69009f774" name="Changes" comment="binder">
+      <change beforePath="$PROJECT_DIR$/.idea/cells-android10.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/cells-android10.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/av/media/libmedia/IMediaPlayerService.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/av/media/libmedia/IMediaPlayerService.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/av/media/mediaserver/main_mediaserver.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/av/media/mediaserver/main_mediaserver.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/libs/binder/BpBinder.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/libs/binder/BpBinder.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/libs/binder/IPCThreadState.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/libs/binder/IPCThreadState.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/libs/binder/IServiceManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/libs/binder/IServiceManager.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/libs/binder/Parcel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/libs/binder/Parcel.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/libs/binder/include/binder/IInterface.h" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/libs/binder/include/binder/IInterface.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frameworks/native/libs/binder/include/binder/IServiceManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/native/libs/binder/include/binder/IServiceManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/system/libhwbinder/ProcessState.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/system/libhwbinder/ProcessState.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frameworks/base/services/core/jni/com_android_server_VibratorService.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/frameworks/base/services/core/jni/com_android_server_VibratorService.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,6 +31,7 @@
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/frameworks/native/cmds/servicemanager/service_manager.c" root0="SKIP_HIGHLIGHTING" />
@@ -49,7 +43,6 @@
   &quot;associatedIndex&quot;: 7
 }</component>
   <component name="ProjectId" id="2xLhJeMH6fvyhroItYg0oY8X8Th" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="compactDirectories" value="true" />
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -68,15 +61,27 @@
     &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/frameworks/cells-android10&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/D/android_project/cells-android10&quot;,
     &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
     &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
     &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;editor.preferences.fonts.default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
     &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;,
     &quot;structure.view.defaults.are.configured&quot;: &quot;true&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;GitStage.ChangesTree.GroupingKeys&quot;: [
+      &quot;directory&quot;,
+      &quot;module&quot;,
+      &quot;repository&quot;
+    ]
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\D\android_project\cells-android10\frameworks\base\core\java\android\app" />
+    </key>
+  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -213,7 +218,56 @@
       <option name="project" value="LOCAL" />
       <updated>1760607106818</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="agent">
+      <created>1781496858541</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1781496858541</updated>
+    </task>
+    <task id="LOCAL-00020" summary="vscode">
+      <created>1781497059752</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1781497059752</updated>
+    </task>
+    <task id="LOCAL-00021" summary="vscode">
+      <created>1781497164812</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1781497164812</updated>
+    </task>
+    <task id="LOCAL-00022" summary="agent + obsidian">
+      <created>1781497232542</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1781497232542</updated>
+    </task>
+    <task id="LOCAL-00023" summary="SystemServiceRegistry">
+      <created>1782882772031</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1782882772031</updated>
+    </task>
+    <task id="LOCAL-00024" summary="SystemServiceRegistry">
+      <created>1783064160239</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1783064160239</updated>
+    </task>
+    <task id="LOCAL-00025" summary="VibratorService">
+      <created>1783064188037</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1783064188037</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="Vcs.Log.History.Properties">
@@ -251,6 +305,11 @@
     <MESSAGE value="servicemanager_service_structure" />
     <MESSAGE value="surfaceflinger" />
     <MESSAGE value="binder" />
-    <option name="LAST_COMMIT_MESSAGE" value="binder" />
+    <MESSAGE value="agent" />
+    <MESSAGE value="vscode" />
+    <MESSAGE value="agent + obsidian" />
+    <MESSAGE value="SystemServiceRegistry" />
+    <MESSAGE value="VibratorService" />
+    <option name="LAST_COMMIT_MESSAGE" value="VibratorService" />
   </component>
 </project>

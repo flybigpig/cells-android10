@@ -289,7 +289,7 @@ struct binder_device {
 
 #ifdef CONFIG_DRV_NS
 
-                                                                                                                        struct binder_drv_ns {
+struct binder_drv_ns {
 	struct drv_ns_info	drv_ns_info;
 };
 

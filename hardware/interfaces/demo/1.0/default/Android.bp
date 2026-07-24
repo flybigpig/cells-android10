@@ -33,20 +33,3 @@ cc_binary {
         "android.hardware.demo@1.0",
     ],
 }
-
-cc_binary {
-    name: "android.hardware.demo@1.0-client",
-    defaults: ["hidl_defaults"],
-    vendor: true,
-    srcs: [
-        "DemoClient.cpp",
-    ],
-    shared_libs: [
-        "liblog",
-        "libbase",
-        "libutils",
-        "libhidlbase",
-        "libhidltransport",
-        "android.hardware.demo@1.0",
-    ],
-}

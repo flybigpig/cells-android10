@@ -377,3 +377,323 @@ fd 对象 → fd=9  (客户端的 fd=5 已被跨进程复制成 9)
 整条链路**只有两次 `copy_from_user`**(客户端发 payload、服务端发 reply 各一次),都落在 `binder_alloc_copy_user_to_buffer`;服务端读请求、客户端读回复都是**零拷贝**直接读各自 mmap 页;对象的"跨进程"靠的是驱动在缓冲里**就地改写**(实体指针↔handle、fd 重编号),而不是复制对象本身。FD 的"复制"是内核 `struct file` 引用计数 + 目标进程新 fd 编号,不走内存拷贝。
 
 需要的话,我可以把这份假数据走查整理成 `Binder数据结构传输示意流程分析.md` 的新增章节(第九节:一次同步调用的假数据全链路走查)。
+
+
+
+下面用同一套假数据,把"客户端 → 服务端 → 客户端"整条**同步**调用链路做一遍**逐函数、带注释**的详细走查。所有函数名、字段、行号都对应你仓库 `kernel/drivers/android/binder.c` 与 `binder_alloc.c`。
+
+---
+
+## 〇、假数据/地址约定(全文统一)
+
+```c
+// 两个进程在 binder 上下文(context)里的身份
+pid=10001  客户端 App          binder_proc *A       mmap 区基址 0x7f00000000
+pid=1000   服务端 Server        binder_proc *B       mmap 区基址 0x7fb0000000
+
+// 客户端对服务端的"句柄",在内核里对应一个 binder_ref → binder_node(debug_id=7)
+tr->target.handle = 1
+
+// 客户端要随调用带过去的"回调 Binder 实体",实体本身属于客户端(发送方)
+本地指针 0x7f12340000  →  经驱动翻译后,服务端拿到 handle=3
+
+// 客户端想跨进程传的 fd(一个已打开文件的"文件描述符编号")
+客户端 fd=5  →  经驱动翻译后,服务端拿到新 fd=9(二者共享同一 struct file)
+
+// 调用属性:同步(非 oneway)、方法号 code=1
+tr->flags = 0
+```
+
+---
+
+## 一、客户端用户态:拼 Parcel(binder.c 之外,libbinder 层)
+
+客户端在用户态把自己的参数排进一块连续缓冲区,假定位址 `0x7f00001000`(落在客户端自己的 binder mmap 区):
+
+```text
+地址          内容(十六进制,小端)             注释
+0x7f00001000  2A 00 00 00                    // int32 = 42,请求 id
+0x7f00001004  05 00 00 00                    // int32 = 5,字符串长度
+0x7f00001008  68 65 6C 6C 6F 00 00 00        // "hello" + 3 字节填充对齐到 8
+0x7f00001010  ── flat_binder_object(24B) ──  // 偏移 16 处
+                01 00 00 00                  //   hdr.type = BINDER_TYPE_BINDER
+                00 00 00 00                  //   hdr.flags = 0
+                00 00 00 00                  //   pad_binder
+                00 00 34 12 7F 00 00 00      //   binder = 0x7f12340000(本地实体指针)
+                00 00 00 00 00 00 00 00      //   cookie = 0(示例回调无 cookie)
+0x7f00001028  ── binder_fd_object(8B) ──────  // 偏移 40 处
+                03 00 00 00                  //   hdr.type = BINDER_TYPE_FD
+                05 00 00 00                  //   fd = 5(客户端源 fd)
+0x7f00001030  (数据区结束,data_size = 48)
+
+// 偏移表单独放在 0x7f00001100,每项 8 字节,记录"对象在数据区里的字节偏移"
+0x7f00001100  10 00 00 00 00 00 00 00        // 第 0 项 = 16 → flat_binder_object
+0x7f00001108  28 00 00 00 00 00 00 00        // 第 1 项 = 40 → binder_fd_object
+                                            // offsets_size = 16
+```
+
+然后客户端写 `binder_write_read` 并通过 `ioctl(BINDER_WRITE_READ)` 下发。命令流是 `BC_TRANSACTION` 紧接一个信封结构体:
+
+```c
+// 客户端写入 write_buffer 的内容(伪代码)
+struct binder_transaction_data tr = {
+    .target.handle = 1,                 // 要找哪个服务
+    .code          = 1,                 // 调服务的哪个方法
+    .flags         = 0,                 // 0=同步(等回复);TF_ONE_WAY 才是异步
+    .data_size     = 48,
+    .offsets_size  = 16,
+    .data.ptr.buffer  = 0x7f00001000,   // 上面那块数据区的用户态地址
+    .data.ptr.offsets = 0x7f00001100,   // 偏移表的用户态地址
+};
+// write_buffer = [BC_TRANSACTION][tr]
+```
+
+---
+
+## 二、ioctl 入口(binder.c:5117)
+
+```c
+static int binder_ioctl_write_read(struct file *filp, unsigned int cmd,
+                                   unsigned long arg, struct binder_thread *thread)
+{
+    struct binder_write_read bwr;
+    copy_from_user(&bwr, (void __user *)arg, sizeof(bwr)); // 先把 bwr 描进内核
+    if (bwr.write_size > 0)
+        binder_thread_write(proc, thread,
+                            bwr.write_buffer, bwr.write_size, &bwr.write_consumed);
+    if (bwr.read_size > 0)        // 同步调用:客户端发完会立刻进 read 等回复
+        binder_thread_read(proc, thread, bwr.read_buffer, bwr.read_size,
+                           &bwr.read_consumed, non_block);
+}
+```
+`filp->private_data` 就是客户端 `binder_proc *A`。
+
+---
+
+## 三、写路径:binder_thread_write(binder.c:3912 → 4161)
+
+```c
+static int binder_thread_write(struct binder_proc *proc, struct binder_thread *thread,
+                               binder_uintptr_t binder_buffer, size_t size,
+                               binder_size_t *consumed)
+{
+    // binder_buffer = 0x...write_buffer,边解析边把 ptr 往前推
+    while (ptr < end) {
+        uint32_t cmd;
+        copy_from_user(&cmd, ptr, sizeof(cmd));   // 读出 BC_TRANSACTION
+        ptr += sizeof(cmd);
+        switch (cmd) {
+        case BC_TRANSACTION:
+        case BC_REPLY: {                          // 4161
+            struct binder_transaction_data tr;
+            copy_from_user(&tr, ptr, sizeof(tr)); // 把上面那张信封拷进内核 ★
+            ptr += sizeof(tr);
+            binder_transaction(proc, thread, &tr,
+                               cmd == BC_REPLY,   // 这里是 BC_TRANSACTION → reply=0
+                               extra_buffers_size);
+            break;
+        }
+        ...
+```
+
+> 注释:到此为止,内核手里有了信封 `tr`(目标 handle、code、flags、数据区/偏移表用户态地址、长度)。接下来 `binder_transaction` 负责真正把数据搬到服务端。
+
+---
+
+## 四、核心:binder_transaction(binder.c:3201)
+
+### 4.1 解析目标 handle → 拿到 target_proc / target_node
+
+```c
+// tr->target.handle = 1,在发送方(A)的 refs 红黑树里查
+ref = binder_get_ref_olocked(proc/*A*/, tr->target.handle/*1*/, true);
+target_node = binder_get_node_refs_for_txn(ref->node, &target_proc, &return_error);
+// 结果:target_proc = B(pid 1000),target_node->debug_id = 7
+```
+
+### 4.2 在**目标进程**分配缓冲区(binder_alloc.c:552)
+
+```c
+// 注意:alloc 是 &B->alloc(服务端),不是发送方 A
+t->buffer = binder_alloc_new_buf(&B->alloc,
+                                 data_size=48, offsets_size=16,
+                                 extra_buffers_size=0, is_async=0);
+// 假设在服务端 mmap 区切出一块,返回:
+//   t->buffer->user_data = 0x7fb0002000  (服务端能直接访问的地址)
+//   数据区  [0x7fb0002000 + 0   .. 47]
+//   偏移表区[0x7fb0002000 + 48  .. 63]
+```
+
+### 4.3 "一次拷贝":把客户端用户态数据搬进服务端 mmap 页(binder_alloc.c:1170)
+
+```c
+// ★ 全链路唯一一次跨进程内存拷贝 ★
+binder_alloc_copy_user_to_buffer(&B->alloc, t->buffer,
+        buffer_offset=0,                 // 写进服务端 buffer 的 0 偏移(数据区起点)
+        from=tr->data.ptr.buffer/*0x7f00001000*/, bytes=48);   // 客户端数据
+binder_alloc_copy_user_to_buffer(&B->alloc, t->buffer,
+        buffer_offset=48,                // 偏移表起点
+        from=tr->data.ptr.offsets/*0x7f00001100*/, bytes=16);  // 客户端偏移表
+// 底层:binder_alloc_get_page 取目标页 → kmap → copy_from_user,逐页完成
+```
+
+### 4.4 偏移表遍历 + 对象翻译(循环见 binder.c ~3592)
+
+驱动逐条读偏移表 `[16, 40]`,对落在这些偏移上的"对象"做翻译,并**就地改写**缓冲内容:
+
+```c
+// off_start_offset = ALIGN(48,8) = 48; 偏移表在 [48, 64)
+for (buffer_offset = 48; buffer_offset < 48+16; buffer_offset += sizeof(binder_size_t)) {
+    binder_size_t object_offset;
+    binder_alloc_copy_from_buffer(&B->alloc, &object_offset, t->buffer, buffer_offset, 8);
+    // 第 1 轮 object_offset=16; 第 2 轮 object_offset=40
+
+    struct binder_object object;
+    object_size = binder_get_object(B, t->buffer, object_offset, &object);
+    // 按 hdr->type 解析出具体对象联合体
+```
+
+**第 1 轮:offset=16 → flat_binder_object**
+
+```c
+    case BINDER_TYPE_BINDER: {                    // binder.c:2791 binder_translate_binder
+        struct flat_binder_object *fp = to_flat_binder_object(hdr);
+        // fp->binder = 0x7f12340000(客户端本地实体指针)
+        // 实体属于发送方 A,所以在"目标进程 B"里新建一个 binder_ref 指向它
+        new_ref = binder_get_ref_for_node(B, node /*A 的 node*/);
+        int handle = new_ref->data.desc;          // 假设分配出 handle = 3
+        fp->type  = BINDER_TYPE_HANDLE;           // ★ 就地改写为句柄类型 ★
+        fp->binder = 0;
+        fp->handle = handle;                       // = 3
+        binder_alloc_copy_to_buffer(&B->alloc, t->buffer, object_offset, fp, object_size);
+        // 把改写后的对象写回服务端 buffer(同一页内,内核↔内核拷贝,不算跨进程)
+        break;
+    }
+```
+
+**第 2 轮:offset=40 → binder_fd_object**
+
+```c
+    case BINDER_TYPE_FD: {                        // binder.c:2911 binder_translate_fd
+        struct binder_fd_object *fp = to_binder_fd_object(hdr);
+        int target_fd = binder_translate_fd(fp->fd/*5*/, t, thread, in_reply_to);
+        // 内部:fget(5) 在客户端 A 拿到 struct file;
+        //      在目标进程 B 的 fd 表找空位,fd_install 得到新编号 9
+        fp->fd = target_fd;                       // = 9,共享同一个 struct file
+        binder_alloc_copy_to_buffer(&B->alloc, t->buffer, object_offset, fp, object_size);
+        break;
+    }
+```
+
+> 注释:翻译完成后,服务端 buffer(0x7fb0002000)里的内容已变成:
+> - 数据区原样(int32=42、"hello")
+> - 偏移 16 处:对象 type 已变 `BINDER_TYPE_HANDLE`、handle=`3`
+> - 偏移 40 处:`fd` 字段已变 `9`
+
+### 4.5 投递到目标进程(binder.c:3108)
+
+```c
+binder_proc_transaction(t, B /*target_proc*/, target_thread);
+// 把 t->work 挂到 B 的某条 todo 队列,并 binder_wakeup_thread_ilocked 唤醒
+// 服务端正在 binder_thread_read 上阻塞的线程被唤醒
+```
+
+---
+
+## 五、服务端读:binder_thread_read(binder.c:4490)
+
+被唤醒后,服务端线程从 `todo` 取出事务 `t`,构造 **BR_TRANSACTION 信封**回写给服务端用户态(binder.c:4766 / 4789):
+
+```c
+trd->code   = t->code;          // = 1
+trd->flags  = t->flags;         // = 0
+trd->target.ptr  = t->buffer->target_node->ptr;   // 服务端本地 service C++ 指针
+trd->cookie       = t->buffer->target_node->cookie;
+trd->data_size    = t->buffer->data_size;         // = 48
+trd->offsets_size = t->buffer->offsets_size;      // = 16
+// ★ 关键:直接把服务端自己 mmap 页的地址给用户态,零拷贝 ★
+trd->data.ptr.buffer  = (uintptr_t)t->buffer->user_data;       // = 0x7fb0002000
+trd->data.ptr.offsets = trd->data.ptr.buffer + ALIGN(48,8);    // = 0x7fb0002030
+
+put_user(BR_TRANSACTION, (uint32_t __user *)ptr);  // 先写命令字
+copy_to_user(ptr, trd, sizeof(*trd));              // 再写 64 字节信封(只回信封!)
+```
+
+**服务端用户态从 `0x7fb0002000` 读到的 Parcel:**
+
+```text
+int32 = 42
+string = "hello"
+Binder 对象 → 类型已是 BINDER_TYPE_HANDLE, handle = 3   // 这就是客户端的回调
+fd 对象     → fd = 9                                    // 客户端 fd=5 的跨进程副本
+```
+
+服务端执行业务逻辑(例如查到结果),把 reply 写进自己的缓冲区,准备回包。
+
+---
+
+## 六、服务端回包:BC_REPLY
+
+服务端在 `bwr.write_buffer` 写 `BC_REPLY` + 信封,数据区只有 `int32 result = 99`:
+
+```c
+struct binder_transaction_data tr_reply = {
+    .code = 1, .flags = 0,
+    .data_size = 4, .offsets_size = 0,
+    .data.ptr.buffer = 0x7fb0000XYZ,   // 服务端 reply blob 用户态地址
+};
+```
+
+再次进入 `binder_transaction`,这次 `reply=1`:
+
+```c
+// 同步回复:通过服务端自己的 transaction_stack 找到原事务 t
+in_reply_to = thread->transaction_stack;     // 第 4.5 步压栈的那个 t
+target_thread = in_reply_to->from;           // 指向客户端线程
+target_proc   = target_thread->proc;         // = A(pid 10001)
+
+binder_alloc_new_buf(&A->alloc, 4, 0, 0, 0); // 在【客户端】mmap 区切块,假设 0x7f00002000
+binder_alloc_copy_user_to_buffer(&A->alloc, buf, 0,
+        tr_reply->data.ptr.buffer, 4);        // ★ 第二次跨进程拷贝:把 99 搬进客户端页 ★
+// offsets_size=0,没有对象要翻译,直接投递
+binder_proc_transaction(t, A, client_thread); // 唤醒客户端
+```
+
+---
+
+## 七、客户端读回:BR_TRANSACTION_COMPLETE → BR_REPLY
+
+客户端在第二步 `binder_ioctl_write_read` 里发完后会立刻进 `binder_thread_read`。它分两次被唤醒:
+
+```c
+// 第一次:收到自己这次发送的完成确认(同步事务特有)
+// 驱动在 binder_transaction 成功入队后,给发送方 todo 挂了 BR_TRANSACTION_COMPLETE
+put_user(BR_TRANSACTION_COMPLETE, ...);
+// 客户端 read 消费掉它,consumed 推进,循环再次 read 并阻塞
+
+// 第二次:服务端回包到达,走 binder.c:4770 的 BR_REPLY 分支
+trd->code = t->code;                          // = 1
+trd->data.ptr.buffer = (uintptr_t)t->buffer->user_data;  // = 0x7f00002000(客户端自己的页)
+put_user(BR_REPLY, ...);
+copy_to_user(trd, 64字节);                    // 只回信封
+```
+
+**客户端用户态从 `0x7f00002000` 读出 `int32 = 99`,整个 transact() 返回。**
+
+---
+
+## 八、全链路拷贝/翻译计数
+
+```text
+客户端发请求:  copy_from_user ×1  (48B 数据 + 16B 偏移表,落在 binder_alloc_copy_user_to_buffer)
+对象翻译:      缓冲内"就地改写"(实体指针↔handle、fd 重编号),无内存拷贝
+服务端收请求:  零拷贝(直接映射 0x7fb0002000)
+服务端发回复:  copy_from_user ×1  (4B,落在 binder_alloc_copy_user_to_buffer)
+客户端收回复:  零拷贝(直接映射 0x7f00002000)
+```
+
+整条链路**只有 2 次 `copy_from_user`**,都在 `binder_alloc_copy_user_to_buffer`(binder_alloc.c:1170);读路径一律零拷贝。FD 的"传递"是 `struct file` 引用 + 目标进程新 fd 编号,不走内存拷贝。
+
+---
+
+需要的话,我可以把这份"假数据 + 逐行注释"的走查整理成 `Binder数据结构传输示意流程分析.md` 的**第九节**(一次同步调用的假数据全链路走查),与前面那几节的结构/示意衔接起来。

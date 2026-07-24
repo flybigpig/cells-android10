@@ -158,10 +158,7 @@ user system
 group system
 ```
 
-1  
-2  
-3  
-4
+
 
 接着我们需要添加 VINTF 对象，对于注册到 hwservicemanager 的服务都需要添加一个 VINTF 对象。对于编码来说 VINTF 对象就是一个 xml 文件，创建 `vendor/jelly/hardware/interfaces/hello_hidl/1.0/default/jelly.hardware.hello_hidl@1.0-service.xml` 文件：
 
@@ -426,7 +423,46 @@ hwbinder_use(hello_hidl_test);
 /vendor/bin/hw/jelly\.hardware\.hello_hidl@1\.0-service    u:object_r:hello_hidl_exec:s0
 ```
 
-1
+
+这些 SELinux 规则描述的是一个标准 HIDL HAL 服务（`jelly.hardware.hello_hidl@1.0`）在 `device/Jelly/Rice14/sepolicy` 下需要的策略。它要解决三件事：让 `init` 把服务进程放进独立 domain、让服务能通过 `hwbinder` 向 `hwservicemanager` 注册自身、让客户端能 `find` 到它。下面按文件逐条说明。
+
+`hwservice.te`
+`type hello_hidl_hwservice, hwservice_manager_type;` 声明一个新类型 `hello_hidl_hwservice`，并打上 `hwservice_manager_type` 属性。这是「hwservice 类型」，专用于 hwservicemanager 的名称空间——只有带这个属性的类型，才能出现在 `hwservice_contexts` 里被登记/查找。`hwservice_contexts` 里的那条映射和客户端 `find` 权限都依赖它。
+
+`hello_hidl.te`（服务进程 domain）
+- `type hello_hidl, domain;` 声明 HAL 服务运行时的进程 domain。
+- `type hello_hidl_exec, exec_type, vendor_file_type, file_type;` 声明服务二进制文件的类型。`exec_type` 是「可执行文件」属性，`vendor_file_type` 表示它在 vendor 分区（因为 HIDL 服务编进 vendor 镜像），`file_type` 是普通文件属性。这个类型要靠 `file_contexts` 把真实路径贴上，否则 exec 转换不生效。
+- `init_daemon_domain(hello_hidl);` 关键宏：允许 `init` 在执行 `hello_hidl_exec` 文件时，把进程从 `init` domain 切换到 `hello_hidl` domain。没有它，服务会留在 init 的 domain 里跑，后续所有 `allow hello_hidl ...` 规则都不会命中。
+- `add_hwservice(hello_hidl, hello_hidl_hwservice)` 宏：允许 `hello_hidl` 把 `hello_hidl_hwservice` 注册到 hwservicemanager（即调用 `registerAsService()` 时的权限）。
+- `hwbinder_use(hello_hidl)` 宏：授予该 domain 使用 `/dev/hwbinder` 设备（open/read/write/ioctl）的权限，是 binder IPC 的底层前提。
+- `allow hello_hidl hidl_base_hwservice:hwservice_manager { add };` 允许向基础 hwservice 类型注册。注意：这一条其实**已经被 `add_hwservice` 宏包含**了——该宏展开后除了允许 `hello_hidl_hwservice`，还会允许 `hidl_base_hwservice`。所以这是一条冗余规则，留着无害，删掉也不影响。
+- `binder_call(hello_hidl, hwservicemanager)` 宏：允许 `hello_hidl` 与 `hwservicemanager` 双向 binder 通信（服务注册、获取自身句柄都要走它）。
+- `get_prop(hello_hidl, hwservicemanager_prop)` 允许服务读取 `hwservicemanager_prop` 类属性（如 `hwservicemanager.ready` 之类），用于判断 hwservicemanager 是否就绪。
+
+`hwservice_contexts`
+`jelly.hardware.hello_hidl::IHello u:object_r:hello_hidl_hwservice:s0` 把 HIDL 接口描述符映射到前面声明的 SELinux 类型。hwservicemanager 查表时依据这一行来给服务打标签，客户端 `find` 时也要匹配它。这里有**一个需要修正的点**：在 Android 10 里，`hwservice_contexts` 的 key 用的是含版本的完整描述符，正确写法应为 `jelly.hardware.hello_hidl@1.0::IHello`（缺了 `@1.0`）。可参照 AOSP 现成条目，如 `android.hardware.light@2.0::ILight u:object_r:hal_light_hwservice:s0`。
+
+`hello_hidl_test.te`（客户端/测试进程 domain）
+- `type hello_hidl_test, domain;` 和 `type hello_hidl_test_exec, exec_type, vendor_file_type, file_type;` 与服务端对称，声明测试进程的 domain 与其二进制文件类型。
+- `domain_auto_trans(shell, hello_hidl_test_exec, hello_hidl_test);` 当你在 `adb shell` 里运行测试二进制时，进程自动从 `shell` domain 切换到 `hello_hidl_test` domain。
+- `get_prop(hello_hidl_test, hwservicemanager_prop)` 允许测试读 hwservicemanager 属性。
+- `allow hello_hidl_test hello_hidl_hwservice:hwservice_manager find;` 这是客户端最核心的权限——`find` 允许通过 hwservicemanager 查找到已注册的 `hello_hidl_hwservice`，也就是 `IHello::getService("default")` 能成功的前提。
+- `hwbinder_use(hello_hidl_test);` 允许测试进程使用 hwbinder 与服务通信。
+
+`file_contexts`
+`/vendor/bin/hw/jelly\.hardware\.hello_hidl@1\.0-service u:object_r:hello_hidl_exec:s0` 用正则（点已转义）把服务二进制路径贴上 `hello_hidl_exec` 类型。这是 `init_daemon_domain` 能触发 domain 切换的根基——路径必须先被正确标记。`file_contexts` 用正则，所以原文件名里的 `.` 必须写成 `\.`。
+
+需要注意的遗漏与补全点：
+
+1. `hwservice_contexts` 接口名应带版本 `@1.0`，改成 `jelly.hardware.hello_hidl@1.0::IHello`。
+2. `add_hwservice` 已内含对 `hidl_base_hwservice` 的 add 权限，那条 `allow ... hidl_base_hwservice ... add` 是冗余的，可删可不删。
+3. 测试 domain 只声明了 `hello_hidl_test_exec`，却**缺少对应的 `file_contexts` 条目**。如果没有把测试二进制路径（如 `/vendor/bin/hw/jelly.hardware.hello_hidl@1.0-client`）标成 `hello_hidl_test_exec`，`domain_auto_trans(shell, ...)` 不会触发，测试进程就跑在 shell domain 下，前面的 `find`/`hwbinder_use` 规则全都用不上。需要补一行 `file_contexts`：`/vendor/bin/hw/jelly\.hardware\.hello_hidl@1\.0-client u:object_r:hello_hidl_test_exec:s0`（按实际产物名调整）。
+4. 这套 `.te` 要真正编进镜像，需在 `device/Jelly/Rice14/BoardConfig.mk` 里确保 `BOARD_SEPOLICY_DIRS` 包含 `device/Jelly/Rice14/sepolicy`（通常 device.mk 已加，确认一下即可）。
+5. 类型（`type` 声明）写在各自 `.te` 里会被自动注册，无需额外在 `attributes` 文件登记；但 `hwservicemanager_prop` 必须由 system/sepolicy 提供，通常已存在，不用自己定义。
+
+------
+
+
 
 ## [#](http://ahaoframework.tech/pages/544e09/#%E7%BC%96%E8%AF%91%E6%89%A7%E8%A1%8C) 编译执行
 

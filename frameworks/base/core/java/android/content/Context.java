@@ -3524,6 +3524,9 @@ public abstract class Context {
      */
     public static final String ACCOUNT_SERVICE = "account";
 
+    /** {@hide} */
+    public static final String DEMO_SERVICE = "demo";
+
     /**
      * Use with {@link #getSystemService(String)} to retrieve a
      * {@link android.app.ActivityManager} for interacting with the global

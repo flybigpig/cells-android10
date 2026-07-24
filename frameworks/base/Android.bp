@@ -399,6 +399,7 @@ java_defaults {
         "core/java/android/view/IWindowSessionCallback.aidl",
         "core/java/android/webkit/IWebViewUpdateService.aidl",
         "core/java/android/speech/IRecognitionListener.aidl",
+        "core/java/android/demo/IDemoManager.aidl",
         "core/java/android/speech/IRecognitionService.aidl",
         "core/java/android/speech/tts/ITextToSpeechCallback.aidl",
         "core/java/android/speech/tts/ITextToSpeechService.aidl",

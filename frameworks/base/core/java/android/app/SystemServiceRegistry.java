@@ -18,6 +18,8 @@ package android.app;
 
 import android.accounts.AccountManager;
 import android.accounts.IAccountManager;
+import android.demo.DemoManager;
+import android.demo.IDemoManager;
 import android.app.ContextImpl.ServiceInitializationState;
 import android.app.admin.DevicePolicyManager;
 import android.app.admin.IDevicePolicyManager;
@@ -241,6 +243,16 @@ final class SystemServiceRegistry {
                 IAccountManager service = IAccountManager.Stub.asInterface(b);
                 return new AccountManager(ctx, service);
             }});
+
+        registerService(Context.DEMO_SERVICE, DemoManager.class,
+                new CachedServiceFetcher<DemoManager>() {
+            @Override
+            public DemoManager createService(ContextImpl ctx) throws ServiceNotFoundException {
+                IBinder b = ServiceManager.getServiceOrThrow(Context.DEMO_SERVICE);
+                IDemoManager service = IDemoManager.Stub.asInterface(b);
+                return new DemoManager(service);
+            }});
+
 
         registerService(Context.ACTIVITY_SERVICE, ActivityManager.class,
                 new CachedServiceFetcher<ActivityManager>() {

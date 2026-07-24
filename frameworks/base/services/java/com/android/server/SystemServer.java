@@ -981,6 +981,11 @@ public final class SystemServer {
             mSystemServiceManager.startService(CONTENT_SERVICE_CLASS);
             traceEnd();
 
+            traceBeginAndSlog("StartDemoManager");
+            mSystemServiceManager.startService(DemoManagerService.class);
+            traceEnd();
+
+
             traceBeginAndSlog("InstallSystemProviders");
             mActivityManagerService.installSystemProviders();
             // Now that SettingsProvider is ready, reactivate SQLiteCompatibilityWalFlags

@@ -1,8 +1,10 @@
 // YourService.cpp
 #define LOG_TAG "YourService"
 #include <utils/Log.h>
+#include <utils/String8.h>
 #include "YourService.h"
-// 客户端
+
+// 服务端具体实现
 namespace android {
 
 YourService::YourService() : mStatus(0) {
@@ -13,8 +15,9 @@ YourService::~YourService() {
     ALOGI("YourService destroyed");
 }
 
+// 仅向 ServiceManager 注册服务，阻塞式 Binder 循环放到 main() 中统一处理
 void YourService::instantiate() {
-    publishAndJoinThreadPool(false);  // false = 不阻塞
+    BinderService<YourService>::instantiate();
 }
 
 status_t YourService::doSomething(const String16& param, int32_t* result) {

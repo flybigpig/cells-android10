@@ -1,5 +1,5 @@
-# yourservice.rc
-service your_service /system/bin/yourservice
+# customservice.rc
+service customservice /system/bin/customservice
     class main              # 或 core (早期启动)
     user root               # 或 system/media/nobody
     group root system       # 根据权限需求

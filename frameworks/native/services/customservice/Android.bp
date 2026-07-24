@@ -1,0 +1,47 @@
+// Android.bp
+cc_binary {
+    name: "customservice",
+
+    srcs: [
+        "main_customservice.cpp",
+        "YourService.cpp",
+        "IYourService.cpp",
+    ],
+
+    shared_libs: [
+        "liblog",
+        "libutils",
+        "libbinder",
+        "libcutils",
+        // 根据需要添加其他依赖
+    ],
+
+    init_rc: ["customservice.rc"],
+
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}
+
+// 可选：命令行客户端，用于验证服务是否正常工作
+cc_binary {
+    name: "customservice_test",
+
+    srcs: [
+        "test_client.cpp",
+        "IYourService.cpp",
+    ],
+
+    shared_libs: [
+        "liblog",
+        "libutils",
+        "libbinder",
+        "libcutils",
+    ],
+
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}

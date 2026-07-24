@@ -1,0 +1,13 @@
+package android.hardware.demo@1.0;
+
+enum Result : uint32_t {
+    OK = 0,
+    INVALID_ARG = 1,
+    NOT_SUPPORTED = 2,
+};
+
+struct DemoStatus {
+    bool ready;
+    uint32_t counter;
+    string message;
+};

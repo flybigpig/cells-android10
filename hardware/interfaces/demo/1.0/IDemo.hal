@@ -1,0 +1,14 @@
+package android.hardware.demo@1.0;
+
+import IDemoCallback;
+
+interface IDemo {
+    // 同步单返回值
+    setValue(uint32_t value) generates (Result result);
+    // 同步多返回值（HIDL 用 callback 回传）
+    getValue() generates (Result result, uint32_t value);
+    // 注册异步回调
+    setCallback(IDemoCallback cb) generates (Result result);
+    // 返回复合 struct
+    getStatus() generates (DemoStatus status);
+};

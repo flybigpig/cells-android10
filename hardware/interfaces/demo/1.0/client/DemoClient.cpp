@@ -22,14 +22,25 @@ using ::android::hardware::Void;
 static std::mutex gMutex;
 static std::condition_variable gCv;
 static bool gCallbackFired = false;
+static bool gStatusFired = false;
 
-// 客户端实现的异步回调：服务端 setValue 时会被调用
+// 客户端实现的异步回调：服务端 setValue / notifyStatus 时会被调用
 struct DemoCallback : public IDemoCallback {
     Return<void> onValueChanged(uint32_t value) override {
         ALOGI("callback onValueChanged(%u)", value);
         {
             std::lock_guard<std::mutex> lk(gMutex);
             gCallbackFired = true;
+        }
+        gCv.notify_one();
+        return Void();
+    }
+    Return<void> onStatusChanged(const DemoStatus& status) override {
+        ALOGI("callback onStatusChanged(ready=%d counter=%u msg=%s)",
+              status.ready, status.counter, status.message.c_str());
+        {
+            std::lock_guard<std::mutex> lk(gMutex);
+            gStatusFired = true;
         }
         gCv.notify_one();
         return Void();
@@ -71,11 +82,21 @@ int main(int /* argc */, char* /* argv */ []) {
     }
     ALOGI("callback fired: %d", gCallbackFired);
 
+    // 4.5) 主动推送状态回调
+    r = demo->notifyStatus();
+    ALOGI("notifyStatus() -> Result=%u", static_cast<uint32_t>(r));
+
+    {
+        std::unique_lock<std::mutex> lk(gMutex);
+        gCv.wait_for(lk, std::chrono::seconds(2), [] { return gStatusFired; });
+    }
+    ALOGI("status callback fired: %d", gStatusFired);
+
     // 5) 返回复合 struct
     demo->getStatus([&](const DemoStatus& s) {
         ALOGI("getStatus() -> ready=%d counter=%u message=%s",
               s.ready, s.counter, s.message.c_str());
     });
 
-    return gCallbackFired ? 0 : 2;
+    return (gCallbackFired && gStatusFired) ? 0 : 2;
 }

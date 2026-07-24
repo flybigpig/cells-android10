@@ -87,6 +87,7 @@ TEST_F(DemoHidlTest, SetCallbackInvalidArg) {
 TEST_F(DemoHidlTest, SetCallbackOk) {
     struct NoopCallback : public IDemoCallback {
         Return<void> onValueChanged(uint32_t /* value */) override { return Void(); }
+        Return<void> onStatusChanged(const DemoStatus& /* status */) override { return Void(); }
     };
     sp<IDemoCallback> cb = new NoopCallback();
     EXPECT_EQ(Result::OK, demo->setCallback(cb));

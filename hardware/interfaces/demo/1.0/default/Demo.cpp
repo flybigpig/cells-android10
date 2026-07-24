@@ -39,6 +39,16 @@ Return<void> Demo::getStatus(getStatus_cb _hidl_cb) {
     return Void();
 }
 
+Return<Result> Demo::notifyStatus() {
+    if (!mCallback) return Result::NOT_SUPPORTED;
+    DemoStatus status;
+    status.ready = true;
+    status.counter = mCounter;
+    status.message = "status update";
+    mCallback->onStatusChanged(status);
+    return Result::OK;
+}
+
 }  // namespace implementation
 }  // namespace V1_0
 }  // namespace demo

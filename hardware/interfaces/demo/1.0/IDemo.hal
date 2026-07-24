@@ -11,4 +11,6 @@ interface IDemo {
     setCallback(IDemoCallback cb) generates (Result result);
     // 返回复合 struct
     getStatus() generates (DemoStatus status);
+    // 主动推送当前状态给已注册的回调
+    notifyStatus() generates (Result result);
 };

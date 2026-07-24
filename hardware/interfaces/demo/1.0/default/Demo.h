@@ -24,6 +24,7 @@ struct Demo : public IDemo {
     Return<void> getValue(getValue_cb _hidl_cb) override;
     Return<Result> setCallback(const sp<IDemoCallback>& cb) override;
     Return<void> getStatus(getStatus_cb _hidl_cb) override;
+    Return<Result> notifyStatus() override;
 
   private:
     uint32_t mValue;

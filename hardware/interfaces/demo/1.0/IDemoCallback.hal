@@ -2,4 +2,5 @@ package android.hardware.demo@1.0;
 
 interface IDemoCallback {
     onValueChanged(uint32_t value);
+    onStatusChanged(DemoStatus status);
 };

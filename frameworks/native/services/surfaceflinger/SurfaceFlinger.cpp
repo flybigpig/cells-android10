@@ -1821,21 +1821,34 @@ void SurfaceFlinger::onMessageReceived(int32_t what) NO_THREAD_SAFETY_ANALYSIS {
     }
 }
 
+// INVALIDATE 阶段：处理待提交的图层事务（transaction）。
+// 由 MessageQueue 投递 eTransactionSignal / eInvalidate 消息后，经 onMessageReceived 调用。
+// 返回值表示是否有事务被真正处理（用于后续判断是否仍需刷新）。
 bool SurfaceFlinger::handleMessageTransaction() {
     ATRACE_CALL();
+    // 取出当前累积的事务标志位（原子读取，不清零）。
     uint32_t transactionFlags = peekTransactionFlags();
 
+    // 刷新各层的 pending 事务队列（如 BufferLayer 的 auto-refresh、deferred 事务等），
+    // 返回本次是否确实 flush 到了一条事务。
     bool flushedATransaction = flushTransactionQueues();
 
+    // 决定是否需要执行完整的 handleTransaction：
+    // 1) 存在任意事务标志；且
+    // 2) 标志不全是 eTransactionFlushNeeded，或者本次确实 flush 到了一条事务。
+    // 这样避免在没有实质变更时仍跑一遍 handleTransaction。
     bool runHandleTransaction = transactionFlags &&
             ((transactionFlags != eTransactionFlushNeeded) || flushedATransaction);
 
     if (runHandleTransaction) {
+        // 执行事务处理（位置/尺寸/可见性/层级等变更生效）。
         handleTransaction(eTransactionMask);
     } else {
+        // 否则仅清除 eTransactionFlushNeeded 标志，避免该标志残留导致反复唤醒。
         getTransactionFlags(eTransactionFlushNeeded);
     }
 
+    // 若 flush 队列后仍判定需要再次 flush（例如有 deferred 事务），重新置上标志。
     if (transactionFlushNeeded()) {
         setTransactionFlags(eTransactionFlushNeeded);
     }
@@ -1843,15 +1856,26 @@ bool SurfaceFlinger::handleMessageTransaction() {
     return runHandleTransaction;
 }
 
+// REFRESH 阶段：一帧合成与显示的总入口。
+// 由 MessageQueue 投递 eRefresh 消息后，经 onMessageReceived 调用。
+// 注意：Android 10 中 prepareFrame/postFrame 已下沉到 CompositionEngine 的
+// RenderSurface/Output，此处仅做编排。
 void SurfaceFlinger::handleMessageRefresh() {
     ATRACE_CALL();
 
+    // 本次刷新已被消费，清除"刷新挂起"标志。
     mRefreshPending = false;
 
+    // 原子取出并清除"全屏重绘"请求（surfaceFlinger 某些路径会要求整屏重画）。
     const bool repaintEverything = mRepaintEverything.exchange(false);
+    // 1) 预合成：遍历图层收集脏区、按需向应用侧发起 invalidate。
     preComposition();
+    // 2) 重建每屏的可见图层栈（可见区计算 + 输出层装配到 CompositionEngine）。
     rebuildLayerStacks();
+    // 3) 计算工作集（Android 10 新增）：分配 Z 序、判定强制 client 合成、
+    //    读取合成状态并写入 HWC（writeStateToHWC）。
     calculateWorkingSet();
+    // 4) 逐显示设备执行合成：起帧 → 准备帧 → 调试闪区 → 实际合成。
     for (const auto& [token, display] : mDisplays) {
         beginFrame(display);
         prepareFrame(display);
@@ -1859,11 +1883,16 @@ void SurfaceFlinger::handleMessageRefresh() {
         doComposition(display, repaintEverything);
     }
 
+    // 统计图层信息（用于 dumpsys / 调试）。
     logLayerStats();
 
+    // 5) 提交帧：将 client 合成结果 queueBuffer 并触发 HWC present。
     postFrame();
+    // 6) 收尾：归还旧 buffer、处理 release fence 等。
     postComposition();
 
+    // 汇总各显示设备本次是否包含 client / device(HWC overlay) 合成，
+    // 供 VSync 调速器判断下一帧的合成方式。
     mHadClientComposition = false;
     mHadDeviceComposition = false;
     for (const auto& [token, displayDevice] : mDisplays) {
@@ -1875,16 +1904,22 @@ void SurfaceFlinger::handleMessageRefresh() {
                 mHadDeviceComposition || getHwComposer().hasDeviceComposition(displayId);
     }
 
+    // 通知 VSync 调速器本次刷新完成（据此调整 SF/App VSync 偏移）。
     mVsyncModulator.onRefreshed(mHadClientComposition);
 
+    // 清空"有队列帧"的图层集合，等待下一轮 latch。
     mLayersWithQueuedFrames.clear();
 }
 
-
+// INVALIDATE 阶段：处理图层新帧的 latch（取帧）。
+// 由 MessageQueue 投递 eInvalidate 消息后，经 onMessageReceived 调用。
+// 返回值 refreshNeeded 表示是否有图层真正换入新帧、需要触发 REFRESH。
 bool SurfaceFlinger::handleMessageInvalidate() {
     ATRACE_CALL();
+    // 遍历 mDrawingState，对 ready 的图层执行 latchBuffer（从 BufferQueue 取新 GraphicBuffer）。
     bool refreshNeeded = handlePageFlip();
 
+    // 若可见区发生变化（例如图层增删、位置变化），重算各图层屏幕边界。
     if (mVisibleRegionsDirty) {
         computeLayerBounds();
         if (mTracingEnabled) {
@@ -1892,6 +1927,7 @@ bool SurfaceFlinger::handleMessageInvalidate() {
         }
     }
 
+    // 对挂起刷新的图层，使其所在 layerStack 的可见区失效，触发后续重建。
     for (auto& layer : mLayersPendingRefresh) {
         Region visibleReg;
         visibleReg.set(layer->getScreenBounds());

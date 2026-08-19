@@ -615,3 +615,63 @@ RenderThread 侧 run()：
 > 走 HWC 上屏。之前第三章「异步、不等待」应精确理解为：对渲染线程非阻塞派发，对 UI
 > 主线程阻塞到 sync 阶段完成即返回，出帧在 RT 上异步继续。
 
+
+
+你贴的是 `MessageQueue::waitMessage()`（`MessageQueue.cpp:126-147`），它是 SurfaceFlinger 主线程的**消息循环**。我先把它的上下文（`init()`、`handler`、`pollOnce` 怎么关联到 VSYNC 事件）读出来，再分析「来消息之后」发生了什么。
+完整上下文已读全。下面分析「`waitMessage()` 来消息之后」发生了什么。
+
+## `waitMessage()` 是什么
+
+它是 SurfaceFlinger 主线程的消息泵（在 `flinger->run()` 里被循环调用，或 `run()` 内部直接进这个 `do...while(true)` 循环）。主线程在这里阻塞：`mLooper->pollOnce(-1)` 带 `-1` 表示**无限等待**，直到 Looper 收到事件（被唤醒）才返回一次。返回后 `switch(ret)` 只是判断唤醒原因：
+
+- `POLL_WAKE` / `POLL_CALLBACK` / `POLL_ERROR` / `POLL_TIMEOUT` 都 `continue` 继续等——注意它**不在这里直接处理消息**，而是让 Looper 自己把通过 `sendMessage` 注册的回调/消息派发掉。
+
+关键点：`pollOnce(-1)` 在返回前，Looper 会先执行已注册的 fd 回调（`cb_eventReceiver`）和已 `sendMessage` 投递的 `Handler::handleMessage`。所以「消息」实际是在 `pollOnce` 内部被消费的，外层 `switch` 只是收尾分类。
+
+## 「来消息」的两种来源
+
+### 来源一：VSYNC / 显示事件（fd 回调）
+
+`init()` 后，`SurfaceFlinger::init()` 调 `mEventQueue->setEventConnection(mScheduler->getEventConnection(mSfConnectionHandle))`（`MessageQueue.cpp:112`）。它把 SF 的 VSYNC 连接通过 `stealReceiveChannel` 偷出接收端的 `mEventTube`（一个 `DisplayEventReceiver` 的 fd），并把 `cb_eventReceiver` 注册到 Looper 监听 `EVENT_INPUT`。
+
+当 EventThread 有 VSYNC 信号时，会往这个 fd 写入事件 → Looper 的 `pollOnce` 被唤醒 → 触发 `cb_eventReceiver`。我虽没读 `cb_eventReceiver` 全文，但结合 `Handler` 可知它的作用：读取 fd 上的 `DisplayEventReceiver` 事件，若是 VSYNC，则调用 `mHandler->dispatchInvalidate()` 或 `dispatchRefresh()`（`MessageQueue.cpp:55/64`）。这两个 `dispatch*` 用 `android_atomic_or` 做去重——只有当前没有挂起同名事件时才 `mLooper->sendMessage(this, Message(INVALIDATE/REFRESH))`，避免一帧内重复投递。
+
+### 来源二：Handler 消息（INVALIDATE / REFRESH）
+
+`dispatchInvalidate/Refresh` 经 `sendMessage` 把 `Message(INVALIDATE)` / `Message(REFRESH)` 投给 `mHandler`。Looper 在 `pollOnce` 内调用 `Handler::handleMessage`（`MessageQueue.cpp:70`）：
+
+```cpp
+case INVALIDATE:
+    android_atomic_and(~eventMaskInvalidate, &mEventMask);  // 清掉去重标志
+    mQueue.mFlinger->onMessageReceived(message.what);        // 转给 SF 主体
+    break;
+case REFRESH:
+    android_atomic_and(~eventMaskRefresh, &mEventMask);
+    mQueue.mFlinger->onMessageReceived(message.what);
+    break;
+```
+
+即最终都汇聚到 `mFlinger->onMessageReceived(what)`——这就是 SurfaceFlinger 真正处理一帧的入口：`INVALIDATE` 触发 `handleMessageInvalidate`（处理事务、rebuild 显示列表），`REFRESH` 触发 `handleMessageRefresh`（执行合成、送 HWC 上屏）。至此 VSYNC 信号变成了一次实际的合成动作。
+
+## 整条「来消息之后」的链路
+
+```
+VSYNC 到达 EventThread
+  → 写入 mEventTube fd
+  → Looper::pollOnce(-1) 在 waitMessage() 内被唤醒
+  → 触发 cb_eventReceiver（读 DisplayEventReceiver 事件）
+  → mHandler->dispatchInvalidate()/dispatchRefresh()   （原子去重后 sendMessage）
+  → Looper 在 pollOnce 内派发 Handler::handleMessage
+  → android_atomic_and 清标志
+  → mFlinger->onMessageReceived(INVALIDATE / REFRESH)
+       → SurfaceFlinger 执行 invalidate / refresh（合成上屏）
+  → pollOnce 返回，外层 switch 收到 POLL_CALLBACK → continue 继续下一轮等待
+```
+
+## 和之前内容的呼应
+
+- 这条链的起点正是你之前在 `SurfaceFlinger::init()` 里看到的 `mEventQueue->setEventConnection(...)`：它在 `init()` 阶段把 VSYNC 连接挂上，之后 `waitMessage()` 才能收到 VSYNC 驱动的 INVALIDATE/REFRESH。
+- `mEventQueue` 本身由 `Factory::createMessageQueue()`（你刚问的那段）在构造时产出，`init()` 里再 `setEventConnection` 接通事件源——构造建对象、init 接数据源、run 进消息循环，三阶段对应前面讲的 SF 装配时序。
+- `onMessageReceived` 之后才会走到 `handleMessageRefresh` 调 HWC 合成，也就是之前 `CanvasContext::draw()` 那边 `queueBuffer` 交上来的 buffer，最终在这里被 SF 取走（`acquireBuffer`）并合成上屏。
+
+需要我展开 `cb_eventReceiver` 的具体实现（如何区分 VSYNC/HOTPLUG/CONFIG 事件、怎么决定 dispatchInvalidate 还是 dispatchRefresh），还是看 `onMessageReceived` → `handleMessageRefresh` 的合成流程？

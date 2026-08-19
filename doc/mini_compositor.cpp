@@ -18,6 +18,9 @@
 #include <string>
 #include <vector>
 
+
+//#include "SF启动链与mini_compositor映射"
+
 // ---------- 模块 5：纯虚接口 + 多态 ----------
 // Layer 抽象基类，定义「图层该提供什么能力」
 class Layer {

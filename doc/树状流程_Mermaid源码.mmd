@@ -1,0 +1,122 @@
+%% 一、整体架构树状图（思维导图）
+mindmap
+  root((App to SF to HWC 渲染链路))
+    App进程_每应用独立
+      UI线程与Choreographer
+        scheduleTraversals
+        doFrame-CALLBACK_TRAVERSAL
+        performTraversals到performDraw
+      ThreadedRenderer
+        draw到HardwareRenderer
+        RenderProxy跨线程投递
+      RenderThread渲染线程
+        DrawFrame任务
+        FrameBuilder记录绘制指令
+        nSyncAndDrawFrame
+      BufferQueue生产者
+        eglSwapBuffers
+        queueBuffer投递buffer
+    surfaceflinger进程_system
+      main主线程入口
+        createSurfaceFlinger
+        init全部子系统
+        addService注册
+        run消息循环
+      init子系统11项
+        RenderEngine-GPU合成
+        HWComposer-HAL客户端
+        Scheduler-EventThread两条
+        Display配置与PowerAdvisor
+      BufferQueue消费者
+        onFrameAvailable
+        acquireBuffer取buffer
+      合成主循环
+        handleMessageRefresh
+        rebuildLayerStacks
+        configureSurfaces
+        doComposition
+        present送显
+    hwcomposer_HAL进程_vendor
+      IComposer_AIDL
+        createLayer
+        setLayerXXX属性
+        presentDisplay
+      送显硬件
+        DRM-KMS-Panel
+      反向回调
+        BnComposerCallback
+        vsync-hotplug
+
+%% 二、SurfaceFlinger 启动流程树
+flowchart TB
+    M["main_surfaceflinger.cpp:79  main()"]
+    M1["L82 configureRpcThreadpool(1,false)"]
+    M2["L85 startGraphicsAllocatorService"]
+    M3["L89 setThreadPoolMaxThreadCount(4)"]
+    M4["L93-102 setSchedAttr + SCHED_FIFO/优先级1"]
+    M5["L118 ps->startThreadPool"]
+    M6["L129 createSurfaceFlinger()  DefaultFactory"]
+    M7["L143 flinger->init()  必须在 addService 前"]
+    M8["L146 addService SurfaceFlinger"]
+    M9["L151 addService SurfaceFlingerAIDL"]
+    M10["L155 startDisplayService"]
+    M11["L162 flinger->run()  主循环"]
+    M --> M1 --> M2 --> M3 --> M4 --> M5 --> M6 --> M7 --> M8 --> M9 --> M10 --> M11
+    I1["L807 addTransactionReadyFilters"]
+    I2["L813-830 RenderEngine::create  GPU合成后端"]
+    I3["L837-839 HWComposer create + setCallback"]
+    I4["L849 configureLocked  开机已连 display"]
+    I5["L853-864 processDisplayAdded 主显"]
+    I6["L873 initScheduler  Scheduler+EventThread×2"]
+    I7["L874 dispatchDisplayHotplugEvent"]
+    I8["L877-882 processDisplayChangesLocked"]
+    I9["L887 mPowerAdvisor->init"]
+    I10["L889-901 primeCache 着色器预热"]
+    I11["L905-911 StartPropertySetThread 开机动画"]
+    M7 --> I1 --> I2 --> I3 --> I4 --> I5 --> I6 --> I7 --> I8 --> I9 --> I10 --> I11
+
+%% 三、App → SF → HWC 完整调用链树
+flowchart TB
+    subgraph APP["App 进程（每应用独立进程）"]
+        direction TB
+        VR["ViewRootImpl.scheduleTraversals"]
+        CH["Choreographer.doFrame  CALLBACK_TRAVERSAL"]
+        TR["ThreadedRenderer.draw"]
+        RP["RenderProxy.draw  跨线程到 RenderThread"]
+        RT["RenderThread: DrawFrame 任务"]
+        FB["FrameBuilder 记录绘制指令(GLES/Skia)"]
+        SYNC["nSyncAndDrawFrame  同步+绘制"]
+        SWAP["eglSwapBuffers / vkQueuePresent"]
+        QB["BufferQueue.queueBuffer"]
+        VR --> CH --> TR --> RP --> RT --> FB --> SYNC --> SWAP --> QB
+    end
+    subgraph SF["surfaceflinger 进程（system）"]
+        direction TB
+        MAIN["main(): createSurfaceFlinger -> init -> addService -> run"]
+        INIT["SurfaceFlinger::init 子系统"]
+        RE["RenderEngine  GPU合成(Client)"]
+        HWC["HWComposer  HAL客户端(AIDL)"]
+        SCH["Scheduler + EventThread×2  驱动 vsync"]
+        OF["BufferQueue.onFrameAvailable"]
+        ACQ["acquireBuffer 取已填 buffer"]
+        REF["handleMessageRefresh: handleTransaction"]
+        STK["rebuildLayerStacks / computeVisibleRegions"]
+        CFG["configureSurfaces  Client+Device 分配"]
+        COMP["doComposition -> doDisplayComposition"]
+        PRES["present -> HWC presentDisplay"]
+        MAIN --> INIT
+        INIT --> RE
+        INIT --> HWC
+        INIT --> SCH
+        QB -. "共享内存 buffer handle(fd) 像素不拷贝" .-> OF
+        OF --> ACQ --> REF --> STK --> CFG --> COMP --> PRES
+    end
+    subgraph HWC["hwcomposer HAL 进程（vendor / Treble）"]
+        direction TB
+        IC["IComposer AIDL  实例 IComposer/default"]
+        PD["presentDisplay -> DRM/KMS -> Panel 送显"]
+        CB["BnComposerCallback  vsync / hotplug 反向"]
+        IC --> PD
+    end
+    PRES == "AIDL Binder  IComposer::presentDisplay" ==> IC
+    CB == "vsync 反向 Binder 调回 SF" ==> SCH

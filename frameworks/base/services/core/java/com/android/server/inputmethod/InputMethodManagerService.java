@@ -1441,17 +1441,23 @@ public class InputMethodManagerService extends IInputMethodManager.Stub
     }
 
     public InputMethodManagerService(Context context) {
+        // 1. 跨进程与本地服务句柄：PackageManager 远程代理用于查询/校验输入法包；
+        //    WMS、DisplayManager、UserManager 的内部接口通过 LocalServices 在同进程直接获取。
         mIPackageManager = AppGlobals.getPackageManager();
         mContext = context;
         mRes = context.getResources();
+        // 2. 主线程 Handler 与设置观察者：SettingsObserver 构造时并不注册监听，真正注册在 switchUserLocked 中。
         mHandler = new Handler(this);
         // Note: SettingsObserver doesn't register observers in its constructor.
         mSettingsObserver = new SettingsObserver(mHandler);
+        // 3. WMS 远程代理（用于显示输入法窗口/IME 控件）与同进程 WMS 内部接口（用于 shouldShowIme 等判断）。
         mIWindowManager = IWindowManager.Stub.asInterface(
                 ServiceManager.getService(Context.WINDOW_SERVICE));
         mWindowManagerInternal = LocalServices.getService(WindowManagerInternal.class);
         mDisplayManagerInternal = LocalServices.getService(DisplayManagerInternal.class);
+        // 4. IME 显示校验器：根据 displayId 判断是否允许在该显示器上显示输入法。
         mImeDisplayValidator = displayId -> mWindowManagerInternal.shouldShowIme(displayId);
+        // 5. HandlerCaller：通过异步 handler 把跨进程调用串行化到主线程执行（如绑定 IME、显示软键盘）。
         mCaller = new HandlerCaller(context, null, new HandlerCaller.Callback() {
             @Override
             public void executeMessage(Message msg) {
@@ -1462,6 +1468,7 @@ public class InputMethodManagerService extends IInputMethodManager.Stub
         mUserManager = mContext.getSystemService(UserManager.class);
         mUserManagerInternal = LocalServices.getService(UserManagerInternal.class);
         mHardKeyboardListener = new HardKeyboardListener();
+        // 6. 设备能力开关：是否支持输入法特性、外置硬键盘行为、是否低内存设备。
         mHasFeature = context.getPackageManager().hasSystemFeature(
                 PackageManager.FEATURE_INPUT_METHODS);
         mSlotIme = mContext.getString(com.android.internal.R.string.status_bar_ime);
@@ -1469,6 +1476,7 @@ public class InputMethodManagerService extends IInputMethodManager.Stub
                 com.android.internal.R.integer.config_externalHardKeyboardBehavior);
         mIsLowRam = ActivityManager.isLowRamDeviceStatic();
 
+        // 7. 构建常驻的“输入法切换”系统通知（setup 阶段也允许弹出），用于通知栏切换 IME。
         Bundle extras = new Bundle();
         extras.putBoolean(Notification.EXTRA_ALLOW_DURING_SETUP, true);
         @ColorInt final int accentColor = mContext.getColor(
@@ -1489,6 +1497,7 @@ public class InputMethodManagerService extends IInputMethodManager.Stub
         mShowOngoingImeSwitcherForPhones = false;
 
         mNotificationShown = false;
+        // 8. 确定当前用户 id（取不到则退化为 0），并缓存为最近切换用户。
         int userId = 0;
         try {
             userId = ActivityManager.getService().getCurrentUser().id;
@@ -1498,10 +1507,12 @@ public class InputMethodManagerService extends IInputMethodManager.Stub
 
         mLastSwitchUserId = userId;
 
+        // 9. mSettings 必须在 buildInputMethodListLocked 之前创建；它保存每个用户的启用/默认输入法列表。
         // mSettings should be created before buildInputMethodListLocked
         mSettings = new InputMethodSettings(
                 mRes, context.getContentResolver(), mMethodMap, userId, !mSystemReady);
 
+        // 10. 刷新当前用户的多用户 profile 集合，加载附加子类型，并创建输入法子类型切换控制器。
         updateCurrentProfileIds();
         AdditionalSubtypeUtils.load(mAdditionalSubtypeMap, userId);
         mSwitchingController = InputMethodSubtypeSwitchingController.createInstanceLocked(

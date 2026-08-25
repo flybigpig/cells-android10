@@ -619,19 +619,23 @@ void SurfaceFlinger::deleteTextureAsync(uint32_t texture) {
 // Do not call property_set on main thread which will be blocked by init
 // Use StartPropertySetThread instead.
 void SurfaceFlinger::init() {
+    // 0. 打印启动日志，记录当前 app 相位偏移（用于 VSYNC 调度）。
     ALOGI(  "SurfaceFlinger's main thread ready to run. "
             "Initializing graphics H/W...");
 
     ALOGI("Phase offset NS: %" PRId64 "", mPhaseOffsets->getCurrentAppOffset());
 
+    // 1. 持有 mStateLock 进入初始化临界区，确保初始化期间状态一致。
     Mutex::Autolock _l(mStateLock);
     // start the EventThread
+    // 2. 创建 Scheduler（VSYNC 调度核心），并注册主屏 VSYNC 使能回调与重同步回调。
     mScheduler =
             getFactory().createScheduler([this](bool enabled) { setPrimaryVsyncEnabled(enabled); },
                                          mRefreshRateConfigs);
     auto resyncCallback =
             mScheduler->makeResyncCallback(std::bind(&SurfaceFlinger::getVsyncPeriod, this));
 
+    // 3. 建立两条事件连接：app（应用侧 VSYNC）与 sf（SurfaceFlinger 合成侧 VSYNC），各自带相位偏移。
     mAppConnectionHandle =
             mScheduler->createConnection("app", mVsyncModulator.getOffsets().app,
                                          mPhaseOffsets->getOffsetThresholdForNextVsync(),
@@ -645,16 +649,20 @@ void SurfaceFlinger::init() {
                                          });
 
     // 注册input事件回调监听 过滤vsync事件
+    // 4. 将 SF 事件连接挂到主线程消息队列（MessageQueue），使 VSYNC 驱动合成主循环。
     mEventQueue->setEventConnection(mScheduler->getEventConnection(mSfConnectionHandle));
 
+    // 5. 将 Scheduler 与两条连接句柄交给 VsyncModulator，由其统一管理 app/sf 相位调制。
     mVsyncModulator.setSchedulerAndHandles(mScheduler.get(), mAppConnectionHandle.get(),
                                            mSfConnectionHandle.get());
 
+    // 6. 启动 RegionSamplingThread，用于内容区域亮度采样（如暗色状态栏自动适配）。
     mRegionSamplingThread =
             new RegionSamplingThread(*this, *mScheduler,
                                      RegionSamplingThread::EnvironmentTimingTunables());
 
     // Get a RenderEngine for the given display / config (can't fail)
+    // 7. 计算 RenderEngine 特性位（色彩管理 / 高优先级上下文 / 保护内容上下文）。
     int32_t renderEngineFeature = 0;
     renderEngineFeature |= (useColorManagement ?
                             renderengine::RenderEngine::USE_COLOR_MANAGEMENT : 0);
@@ -666,10 +674,12 @@ void SurfaceFlinger::init() {
 
     // TODO(b/77156734): We need to stop casting and use HAL types when possible.
     // Sending maxFrameBufferAcquiredBuffers as the cache size is tightly tuned to single-display.
+    // 8. 创建 RenderEngine（GPU 合成后端），并注入到合成引擎。
     mCompositionEngine->setRenderEngine(
             renderengine::RenderEngine::create(static_cast<int32_t>(defaultCompositionPixelFormat),
                                                renderEngineFeature, maxFrameBufferAcquiredBuffers));
 
+    // 9. 创建并注册 HWComposer（HWC2 硬件合成 HAL），再处理初始热插拔事件，确认内屏已连接。
     LOG_ALWAYS_FATAL_IF(mVrFlingerRequestsDisplay,
             "Starting with vr flinger active is not currently supported.");
     mCompositionEngine->setHwComposer(getFactory().createHWComposer(getBE().mHwcServiceName));
@@ -681,6 +691,7 @@ void SurfaceFlinger::init() {
     LOG_ALWAYS_FATAL_IF(!getHwComposer().isConnected(*display->getId()),
                         "Internal display is disconnected.");
 
+    // 10. 若启用 VR，则创建 VrFlinger（注意通过 postMessageAsync 把状态变更抛回主线程避免死锁）。
     if (useVrFlinger) {
         auto vrFlingerRequestDisplayCallback = [this](bool requestDisplay) {
             // This callback is called from the vr flinger dispatch thread. We
@@ -706,15 +717,18 @@ void SurfaceFlinger::init() {
     }
 
     // initialize our drawing state
+    // 11. 将绘制状态初始化为当前状态，并初始化各显示器（如点亮默认屏、设置初始显示状态）。
     mDrawingState = mCurrentState;
 
     // set initial conditions (e.g. unblank default device)
     initializeDisplays();
 
+    // 12. 预热 RenderEngine 着色器缓存，避免首帧卡顿。
     getRenderEngine().primeCache();
 
     // Inform native graphics APIs whether the present timestamp is supported:
 
+    // 13. 根据 HWC 是否支持可靠的 present fence，创建并启动开机属性设置线程（设置 bootanimation 等属性）。
     const bool presentFenceReliable =
             !getHwComposer().hasCapability(HWC2::Capability::PresentFenceIsNotReliable);
     mStartPropertySetThread = getFactory().createStartPropertySetThread(presentFenceReliable);
@@ -724,6 +738,7 @@ void SurfaceFlinger::init() {
     }
 
     // 回调监听  改变刷新率
+    // 14. 注册刷新率变更 / 查询当前刷新率类型 / 查询 VSYNC 周期 三类回调，供 Scheduler 动态调节帧率。
     mScheduler->setChangeRefreshRateCallback(
             [this](RefreshRateType type, Scheduler::ConfigEvent event) {
                 Mutex::Autolock lock(mStateLock);
@@ -753,6 +768,7 @@ void SurfaceFlinger::init() {
         return getVsyncPeriod();
     });
 
+    // 15. 用 HWC 返回的显示配置填充刷新率配置表，并记录当前活跃配置到刷新率统计模块。
     mRefreshRateConfigs.populate(getHwComposer().getConfigs(*display->getId()));
     mRefreshRateStats.setConfigMode(getHwComposer().getActiveConfigIndex(*display->getId()));
 

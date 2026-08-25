@@ -1046,12 +1046,16 @@ public class WindowManagerService extends IWindowManager.Stub
     private WindowManagerService(Context context, InputManagerService inputManager,
             boolean showBootMsgs, boolean onlyCore, WindowManagerPolicy policy,
             ActivityTaskManagerService atm, TransactionFactory transactionFactory) {
+        // 1. 加锁与全局锁：installLock 将本服务注册到 Watchdog 的窗口锁表中；
+        //    WMS 复用 ATMS 的全局锁，保证窗口与 Activity 状态在同一把锁下同步，避免死锁。
         installLock(this, INDEX_WINDOW);
         mGlobalLock = atm.getGlobalLock();
+        // 保存 ATMS 引用，后续窗口容器与任务栈的联动都通过该引用完成。
         mAtmService = atm;
         mContext = context;
         mAllowBootMessages = showBootMsgs;
         mOnlyCore = onlyCore;
+        // 2. 资源配置读取：从 config 中读取合成、Dpad、触摸模式、绘制超时等开关与整型参数。
         mLimitedAlphaCompositing = context.getResources().getBoolean(
                 com.android.internal.R.bool.config_sf_limitedAlpha);
         mHasPermanentDpad = context.getResources().getBoolean(
@@ -1070,22 +1074,29 @@ public class WindowManagerService extends IWindowManager.Stub
                 com.android.internal.R.bool.config_perDisplayFocusEnabled);
         mLowRamTaskSnapshotsAndRecents = context.getResources().getBoolean(
                 com.android.internal.R.bool.config_lowRamTaskSnapshotsAndRecents);
+                
+        // 3. 核心子系统装配：InputManager 必须最先持有，因为后续创建 DisplayContent 时会
+        //    注册输入通道（见 createDisplayContentLocked 的依赖顺序说明）。
         mInputManager = inputManager; // Must be before createDisplayContentLocked.
         mDisplayManagerInternal = LocalServices.getService(DisplayManagerInternal.class);
         mDisplayWindowSettings = new DisplayWindowSettings(this);
 
+        // 4. 图形事务工厂与默认事务对象，用于批量提交 Surface 操作。
         mTransactionFactory = transactionFactory;
         mTransaction = mTransactionFactory.make();
+        // 5. 窗口策略、动画器与根窗口容器：mRoot 是整棵显示/窗口树的根，mAnimator 驱动动画帧。
         mPolicy = policy;
         mAnimator = new WindowAnimator(this);
         mRoot = new RootWindowContainer(this);
 
+        // 6. 窗口布局摆放器、任务快照控制器、窗口追踪工具，分别负责 relayout、截图与性能追踪。
         mWindowPlacerLocked = new WindowSurfacePlacer(this);
         mTaskSnapshotController = new TaskSnapshotController(this);
 
         mWindowTracing = WindowTracing.createDefaultAndStartLooper(this,
                 Choreographer.getInstance());
 
+        // 将窗口策略以 LocalServices 形式注册，供同进程其他服务直接调用。
         LocalServices.addService(WindowManagerPolicy.class, mPolicy);
 
         mDisplayManager = (DisplayManager)context.getSystemService(Context.DISPLAY_SERVICE);
@@ -1121,6 +1132,8 @@ public class WindowManagerService extends IWindowManager.Stub
                 PowerManager.PARTIAL_WAKE_LOCK, "SCREEN_FROZEN");
         mScreenFrozenLock.setReferenceCounted(false);
 
+        // 7. Binder 代理与 Local 内部服务：AMS/ATMS 的远程代理用于跨进程调用；
+        //    *Internal 为同进程本地服务，性能更优且可持有锁内引用。
         mActivityManager = ActivityManager.getService();
         mActivityTaskManager = ActivityTaskManager.getService();
         mAmInternal = LocalServices.getService(ActivityManagerInternal.class);
@@ -1135,6 +1148,7 @@ public class WindowManagerService extends IWindowManager.Stub
         mAppOps.startWatchingMode(OP_SYSTEM_ALERT_WINDOW, null, opListener);
         mAppOps.startWatchingMode(AppOpsManager.OP_TOAST_WINDOW, null, opListener);
 
+        // 8. 监听应用挂起/恢复广播，动态更新被挂起应用窗口的隐藏状态。
         mPmInternal = LocalServices.getService(PackageManagerInternal.class);
         final IntentFilter suspendPackagesFilter = new IntentFilter();
         suspendPackagesFilter.addAction(Intent.ACTION_PACKAGES_SUSPENDED);
@@ -1151,6 +1165,7 @@ public class WindowManagerService extends IWindowManager.Stub
             }
         }, UserHandle.ALL, suspendPackagesFilter, null, null);
 
+        // 9. 读取并初始化全局动画/过渡缩放设置，以及强制桌面模式开关。
         final ContentResolver resolver = context.getContentResolver();
         // Get persisted window scale setting
         mWindowAnimationScaleSetting = Settings.Global.getFloat(resolver,
@@ -1171,6 +1186,7 @@ public class WindowManagerService extends IWindowManager.Stub
         filter.addAction(ACTION_DEVICE_POLICY_MANAGER_STATE_CHANGED);
         mContext.registerReceiverAsUser(mBroadcastReceiver, UserHandle.ALL, filter, null, null);
 
+        // 10. 延迟追踪、设置观察者、保持屏幕亮起的 WakeLock，以及 Surface 动画运行器。
         mLatencyTracker = LatencyTracker.getInstance(context);
 
         mSettingsObserver = new SettingsObserver();
@@ -1184,10 +1200,14 @@ public class WindowManagerService extends IWindowManager.Stub
         mAllowTheaterModeWakeFromLayout = context.getResources().getBoolean(
                 com.android.internal.R.bool.config_allowTheaterModeWakeFromWindowLayout);
 
+        // 11. 窗口级交互控制器：
+        //     TaskPositioningController 负责 freeform 任务的拖拽/缩放，需 InputManager 与 ATMS 配合；
+        //     DragDropController 负责 View 级拖放（ClipData + 拖影），带 5s 超时与 OEM 回调。
         mTaskPositioningController = new TaskPositioningController(
                 this, mInputManager, mActivityTaskManager, mH.getLooper());
         mDragDropController = new DragDropController(this, mH.getLooper());
 
+        // 12. 高刷新率黑名单与系统手势排除区域参数（部分来自 DeviceConfig 动态下发）。
         mHighRefreshRateBlacklist = HighRefreshRateBlacklist.create(context.getResources());
 
         mSystemGestureExclusionLimitDp = Math.max(MIN_GESTURE_EXCLUSION_LIMIT_DP,
@@ -1221,6 +1241,9 @@ public class WindowManagerService extends IWindowManager.Stub
                     }
                 });
 
+        // 13. 收尾：将 WindowManagerInternal 以 LocalServices 形式暴露给同进程其他服务，
+        //     供 AMS 等通过本地接口而非 Binder 调用 WMS 内部能力。构造阶段到此结束，
+        //     真正的策略初始化（initPolicy）在 onInitReady 第二阶段中执行。
         LocalServices.addService(WindowManagerInternal.class, new LocalService());
     }
 

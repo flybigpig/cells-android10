@@ -311,20 +311,30 @@ public class InputManagerService extends IInputManager.Stub
     final boolean mUseDevInputEventForAudioJack;
 
     public InputManagerService(Context context) {
+        // 1. 保存上下文，并创建绑定到 DisplayThread Looper 的 InputManagerHandler，
+        //    输入相关的异步处理（如重载键盘布局、设备别名）都跑在独立显示线程，避免阻塞系统服务主线程。
         this.mContext = context;
         this.mHandler = new InputManagerHandler(DisplayThread.get().getLooper());
 
+        // 2. 读取资源配置：是否用 /dev/input/event 子系统上报音频插孔事件（而非 uevent）。
         mUseDevInputEventForAudioJack =
                 context.getResources().getBoolean(R.bool.config_useDevInputEventForAudioJack);
         Slog.i(TAG, "Initializing input manager, mUseDevInputEventForAudioJack="
                 + mUseDevInputEventForAudioJack);
+        // 3. 核心：通过 JNI 进入 native 层创建 NativeInputManager 及底层 InputManager
+        //    （InputReader/InputClassifier/InputDispatcher 的组装在此完成），并传入 DisplayThread
+        //    的 MessageQueue 供 native 向 Java 侧 post 消息；返回的 mPtr 是 native 对象长期指针，
+        //    后续所有 nativeXXX 方法都要带它。
         mPtr = nativeInit(this, mContext, mHandler.getLooper().getQueue());
 
+        // 4. 读取双击手势使能文件路径（部分设备用内核节点开关双击唤醒等特性），空串则置为 null。
         String doubleTouchGestureEnablePath = context.getResources().getString(
                 R.string.config_doubleTouchGestureEnableFile);
         mDoubleTouchGestureEnableFile = TextUtils.isEmpty(doubleTouchGestureEnablePath) ? null :
             new File(doubleTouchGestureEnablePath);
 
+        // 5. 将 InputManagerInternal 以 LocalServices 形式暴露，供同进程其它服务
+        //    （WMS、PowerManagerService 等）通过本地接口而非 Binder 调用 IMS 内部能力。
         LocalServices.addService(InputManagerInternal.class, new LocalService());
     }
 

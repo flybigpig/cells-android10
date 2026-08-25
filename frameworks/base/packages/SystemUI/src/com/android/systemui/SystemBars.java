@@ -70,6 +70,7 @@ public class SystemBars extends SystemUI {
                     .getStatusBarInjector()
                     .createStatusBar((StatusBar) mStatusBar);
         }
+        // StatusBar.start  and   makeStatusBarView -> createNavigationBar
         mStatusBar.start();
         if (DEBUG) Log.d(TAG, "started " + mStatusBar.getClass().getSimpleName());
     }

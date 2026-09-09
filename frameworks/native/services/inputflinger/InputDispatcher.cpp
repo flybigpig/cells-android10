@@ -1094,6 +1094,7 @@ int32_t InputDispatcher::handleTargetsNotReadyLocked(nsecs_t currentTime,
     }
 
     if (currentTime >= mInputTargetWaitTimeoutTime) {
+        // input target wait timeout expired ,input anr
         onANRLocked(currentTime, applicationHandle, windowHandle,
                 entry->eventTime, mInputTargetWaitStartTime, reason);
 
@@ -4063,7 +4064,9 @@ void InputDispatcher::onFocusChangedLocked(const sp<InputWindowHandle>& oldFocus
     commandEntry->oldToken = oldToken;
     commandEntry->newToken = newToken;
 }
-
+/**
+ *  input  anr
+ */
 void InputDispatcher::onANRLocked(
         nsecs_t currentTime, const sp<InputApplicationHandle>& applicationHandle,
         const sp<InputWindowHandle>& windowHandle,

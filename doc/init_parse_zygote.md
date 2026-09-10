@@ -311,7 +311,7 @@ Result<Success> ActionParser::EndSection() {
 }
 ```
 
-# rc 内部总共有三段，总的会添加三个action,每个4条命令 ，但是由于条件冲突，只会执行一条action
+rc 内部总共有三段，总的会添加三个action,每个4条命令 ，但是由于条件冲突，只会执行一条action
 空 action(只有 trigger 没有命令)被丢弃。至此 `on zygote-start` 段成为一个 `Action` 对象进入 `ActionManager::actions_`,内含 4 条命令(`exec_start`、`start netd`、`start zygote`、`start zygote_secondary`)。
 
 

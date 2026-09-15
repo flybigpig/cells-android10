@@ -145,5 +145,11 @@
     "clangd.inactiveRegions.useBackgroundHighlight": false,
     "clangd.enableCodeCompletion": true,
     "clangd.enable": true,
-    "clangd.serverCompletionRanking": false
+    "clangd.serverCompletionRanking": false,
+
+    "workbench.colorCustomizations": {
+    "minimapSlider.background": "#aaaaaaaa",
+    "minimapSlider.hoverBackground": "#aaaaaaaa",
+    "editor.findMatchBackground": "#ff5722"
+}
 }

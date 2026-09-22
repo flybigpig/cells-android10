@@ -44,6 +44,47 @@ flinger->run()                         （主线程从此成为 SF 主循环，�
 
 `onFirstRef()` 只做一件事：`mEventQueue->init(this)`，创建 `Looper(true)` 与 `Handler`。
 
+### 2.1 onFirstRef 的触发机制（RefBase 引用计数）
+
+`onFirstRef()` 不是业务代码显式调用的，而是由 **RefBase 的引用计数在"对象第一次被强指针 `sp<>` 持有"时自动回调**（所有 `RefBase` 子类如 `Layer`、`DisplayDevice`、`BBinder` 都遵循同一规则）。`weakref_impl` 构造时 `mStrong` 初值是 `INITIAL_STRONG_VALUE`（`1<<28`，`RefBase.cpp:159`），因此"第一次 `incStrong`"可被识别：
+
+```411:430:system/core/libutils/RefBase.cpp
+void RefBase::incStrong(const void* id) const
+{
+    weakref_impl* const refs = mRefs;
+    refs->incWeak(id);
+    refs->addStrongRef(id);
+    const int32_t c = refs->mStrong.fetch_add(1, std::memory_order_relaxed);
+    ...
+    if (c != INITIAL_STRONG_VALUE)  {
+        return;
+    }
+    int32_t old __unused = refs->mStrong.fetch_sub(INITIAL_STRONG_VALUE, std::memory_order_relaxed);
+    ALOG_ASSERT(old > INITIAL_STRONG_VALUE, "0x%x too small", old);
+    refs->mBase->onFirstRef();
+}
+```
+
+强引用计数从 `INITIAL_STRONG_VALUE` 跳到真实计数 1 的那一次 `incStrong` 会回调 `onFirstRef()`；此后所有 `incStrong`（c 已是 1、2、3…）直接 `return`，因此**每个对象生命周期内只调用一次**。（例外：`forceIncStrong` 在 `c==0` 时也会回调，用于 wp 提升/resurrect 场景，见 `RefBase.cpp:480-487`。）
+
+**SurfaceFlinger 的实际调用链**：
+
+```
+main_surfaceflinger.cpp:113  sp<SurfaceFlinger> flinger = surfaceflinger::createSurfaceFlinger();
+    → SurfaceFlingerFactory.cpp:142   return new SurfaceFlinger(factory);
+        → 裸指针隐式转成返回类型 sp<SurfaceFlinger>
+            → StrongPointer.h:141-145  sp<T>::sp(T*) : m_ptr(other) { other->incStrong(this); }
+                → RefBase::incStrong()  → SurfaceFlinger::onFirstRef()
+```
+
+`sp<T>` 的构造函数会立即对非空指针调 `incStrong(this)`（`StrongPointer.h:140-145`），正是这一步触发了 `onFirstRef()`。
+
+**确切时机**：在 `SurfaceFlinger` 构造函数（285-283 行，末尾 `mEventQueue(mFactory.createMessageQueue())`）**执行完毕之后**——即 `createSurfaceFlinger()` 返回、裸指针被 `sp` 接住的那一刻。在 `main()` 中的相对顺序是：**构造函数 → `onFirstRef()`（创建 Looper/Handler）→ `flinger->init()`（621，建 Scheduler、EventThread、HWComposer、RenderEngine…）→ `addService` → `flinger->run()`（1493）**。所以 `onFirstRef` 早于 `init`，更远早于主循环。
+
+**为什么不放进构造函数**：其一，`mEventQueue->init(this)` 要把 `this` 交给 `MessageQueue` 内部的 `Looper`/`Handler` 长期持有，构造函数尚未返回时发布自身指针不安全；其二，在构造函数里若对 `this` 取强引用（`sp<SurfaceFlinger>(this)`），引用计数归零时会 `delete this`，而对象还没构造完——`onFirstRef` 的语义正是"对象已完整构造且已被至少一个强引用持有"，是做这类初始化的唯一安全窗口。
+
+对称地，最后一次 `decStrong` 使计数降到 0 时回调 `onLastStrongRef()`，随后在 `OBJECT_LIFETIME_STRONG` 模式下 `delete this`（`RefBase.cpp:442-450`）。
+
 `init()`（621-776）顺序严格：
 
 1. 创建 `Scheduler`（带 `setPrimaryVsyncEnabled` 回调与 `getVsyncPeriod` 重同步回调）。

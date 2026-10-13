@@ -164,17 +164,28 @@ a->speak();              // 实际调 Dog::speak()，由虚表在运行时决定
 - `= 0` 纯虚：强制子类必须实现，带纯虚函数的类叫**抽象类**，不能实例化——就是 C++ 的「接口」。
 - `override`：告诉编译器「我意图重写父类虚函数」，写错签名会编译报错（强烈建议永远加）。
 
-**仓库实例**（你第一轮梳理的核心结构）：
+**仓库实例**（已对照源码核实）：
 ```
-compositionengine::LayerFE        // 纯虚接口（=0 的虚函数）
-        ▲ virtual
-   Layer                            // 抽象基类
+compositionengine::LayerFE        // CompositionEngine/include/compositionengine/LayerFE.h:31
+        ▲ virtual                   //   class LayerFE : public virtual RefBase  ← 虚继承 RefBase
+   Layer                            // CompositionEngine/include/compositionengine/Layer.h
         ▲
    BufferLayer / ColorLayer / ContainerLayer
         ▲
    BufferQueueLayer / BufferStateLayer
 ```
-`LayerFE` 就是 C++ 接口：定义「合成前端该提供什么能力」。`Layer` 及其子类各自 `override` 这些虚函数（如 `prepareClientLayer`、`getCompositionLayer`），而合成主流程 `handleMessageRefresh` 只需持有 `LayerFE*`/`Layer*`，调用虚函数就能多态地驱动任意具体图层——这正是为什么 SurfaceFlinger 能统一处理 buffer 图层、纯色图层、容器图层，而不用写一堆 `if (type == COLOR)`。
+`LayerFE` 就是 C++ 接口，定义「合成前端该提供什么能力」，全文只有三个纯虚函数（`LayerFE.h:31-42`）：
+
+```31:42:frameworks/native/services/surfaceflinger/CompositionEngine/include/compositionengine/LayerFE.h
+class LayerFE : public virtual RefBase {
+public:
+    virtual void latchCompositionState(LayerFECompositionState&, bool includeGeometry) const = 0;
+    virtual void onLayerDisplayed(const sp<Fence>&) = 0;
+    virtual const char* getDebugName() const = 0;
+};
+```
+
+两个额外细节：`public virtual RefBase` 是**虚继承** Android 的引用计数基类（避免多继承时 `RefBase` 被继承两份）；参数里的 `sp<Fence>` 是 **Android 强指针**，不是 `std::shared_ptr`——SF 里两套智能指针并存，见模块 14。`Layer` 及其子类各自 `override` 这些虚函数（如 `prepareClientLayer`、`getCompositionLayer`），而合成主流程 `handleMessageRefresh` 只需持有 `LayerFE*`/`Layer*`，调用虚函数就能多态地驱动任意具体图层——这正是为什么 SurfaceFlinger 能统一处理 buffer 图层、纯色图层、容器图层，而不用写一堆 `if (type == COLOR)`。
 
 > 小练习：写一个 `Shape` 接口（纯虚 `area()`），派生 `Circle` 和 `Rectangle`，用父类指针数组遍历打印面积。
 
@@ -412,7 +423,7 @@ std::atomic<bool> mRefreshPending{false};
 mRefreshPending = true;          // 原子写
 if (mRefreshPending.exchange(false)) { ... }  // 原子读+写，返回旧值
 ```
-你之前注释过的 `mRefreshPending.exchange(false)`（在 `handleMessageRefresh` 里）就是原子地「取出并清零」——合成线程消费刷新请求时，不会和别的线程的置位操作打架。`mRepaintEverything.exchange(false)` 同理。
+**注意（已对照源码修正）**：`mRefreshPending` 确实声明为 `std::atomic<bool>`（`SurfaceFlinger.h:1056`），但仓库里**并没有**对它用 `exchange`——`signalRefresh()` 里是普通赋值 `mRefreshPending = true`（`SurfaceFlinger.cpp:1475`），`handleMessageRefresh()` 开头是 `mRefreshPending = false`（`SurfaceFlinger.cpp:1883`）。真正「原子取出并清零」的是 `mRepaintEverything.exchange(false)`（`SurfaceFlinger.cpp:1886`），它才对应上面示例里 `exchange` 那一行。
 
 ### `std::mutex` / `std::lock_guard` —— 互斥锁（RAII 版）
 ```cpp
@@ -422,7 +433,7 @@ std::mutex mStateLock;
     mCurrentState = mDrawingState;                 // 临界区
 }                                                     // 离开作用域自动解锁（RAII！）
 ```
-`SurfaceFlinger::init()` 一开头就 `std::lock_guard<std::mutex> lock(mStateLock);`——这正是模块 2 讲的 RAII：加锁对象离开作用域保证解锁，绝不忘记 `unlock`。你之前读的几乎所有 SF 成员函数开头都有这把锁，保护 `mCurrentState`/`mDrawingState` 不被多线程同时改。
+**注意（已对照源码修正）**：Android 不用 `std::mutex`，而用自己的 `android::Mutex`（`system/core/libutils/include/utils/Mutex.h`），配套 RAII 封装是 `Mutex::Autolock`（`AutoMutex` 是它的 typedef，`Mutex.h:212`）。所以 `SurfaceFlinger::init()`（`SurfaceFlinger.cpp:621`）里写的是 `Mutex::Autolock _l(mStateLock);`（`SurfaceFlinger.cpp:629`），不是 `std::lock_guard`。语义完全等价（构造加锁、析构解锁，正是模块 2 的 RAII），只是 Android 版额外支持线程名、`tryLock`、配套 `Condition` 条件变量。你读 SF 几乎所有成员函数开头都有这把锁，保护 `mCurrentState`/`mDrawingState`。
 
 ### `std::thread` —— 标准线程
 Android 里还有自己的 `android::Thread`（你之前读的 `RegionSamplingThread`、`StartPropertySetThread` 都继承它），但它底层就是封装了 `std::thread`/`pthread`。概念一致：把一段逻辑丢到独立线程跑，用 `join()` 等它结束。
@@ -807,7 +818,7 @@ int main() {
 }
 ```
 **涉及**：`std::atomic::exchange/load`、`std::mutex`、`std::lock_guard`、`std::thread`、`join`。
-**对照仓库**：`mRefreshPending.exchange(false)`、`init()` 开头 `lock_guard(mStateLock)`。
+**对照仓库**：`mRepaintEverything.exchange(false)`（`SurfaceFlinger.cpp:1886`）；`init()` 开头 `Mutex::Autolock _l(mStateLock)`（`SurfaceFlinger.cpp:629`，Android 版 RAII 锁，非 `std::lock_guard`）。
 
 </details>
 
@@ -1043,5 +1054,79 @@ g++ -std=c++17 module13.cpp -o m13 && ./m13
 **涉及**：`std::optional` / `std::nullopt` / `has_value` / `*` 取值、`std::string_view` 只读视图 + `.find_first_of` / `.substr`、 `[[nodiscard]]` 编译期防护。对照仓库：`DisplayIdentification.{h,cpp}` 的 `string_view` 实战、`android::base::Result`/返回状态的函数加 `nodiscard` 的惯例。
 
 把这三点加进你的「读 SF 源码工具箱」：看到 `optional` 想「可能没值、先检查」，看到 `string_view` 想「只读借看、注意生命周期」，看到 `[[nodiscard]]` 想「返回值必须处理」。这三个特性在 C++17 代码里出现频率极高，掌握后读 AOSP 现代代码会顺畅很多。
+
+---
+
+## 模块 14：Android 自研替代品（读 SF 前必须知道的「两套并行世界」）
+
+前 13 个模块讲的是**标准现代 C++**。但 SurfaceFlinger 里到处是 Android 自己造的轮子，不先认清它们，你会把标准库和自研库搞混。这两个是最高频的。
+
+### 14.1 `sp<T>` / `wp<T>` —— Android 强/弱指针（不是 `shared_ptr`）
+
+Android 在 `std::shared_ptr` 普及之前就有了自己的引用计数智能指针，定义在 `system/core/libutils/include/utils/RefBase.h` / `StrongPointer.h`：
+
+```cpp
+sp<Layer> layer;    // 强指针，类似 shared_ptr：持强引用，阻止对象销毁
+wp<Layer> weak;     // 弱指针，类似 weak_ptr：不阻止销毁，可 promote() 升级
+```
+
+- **基类要继承 `RefBase`**：任何想被 `sp<>` 管理的类必须 `public virtual RefBase`（这正是 `LayerFE.h:31` 的写法）。`RefBase` 内部维护强/弱两个计数，`incStrong/decStrong` 在首次强引用时回调 `onFirstRef()`（我们之前分析过的那个钩子）。
+- **对应关系**：`sp<T>` ≈ `shared_ptr<T>`，`wp<T>` ≈ `weak_ptr<T>`，`sp<T>(new T)` ≈ `make_shared<T>()`。
+- **两套并存**：SF 的**框架侧**（`Layer`、`DisplayDevice`、`Fence`、`GraphicBuffer`）用 `sp<>`；而 `CompositionEngine` 内部（后端合成层）用标准 `std::shared_ptr` + `std::make_shared`（见 `Layer.cpp:32`）。所以你在同一个文件里既能看到 `sp<Layer>` 又能看到 `std::shared_ptr<compositionengine::Layer>`，不要以为是写错了。
+
+### 14.2 `Mutex::Autolock` —— Android 版 RAII 锁（不是 `std::lock_guard`）
+
+`system/core/libutils/include/utils/Mutex.h` 定义 `android::Mutex`，配套 `Mutex::Autolock`：
+
+```cpp
+#include <utils/Mutex.h>
+
+android::Mutex mLock;
+void foo() {
+    Mutex::Autolock _l(mLock);   // 构造即加锁，函数返回自动解锁（RAII，同模块 12 语义）
+    // 临界区
+}
+```
+
+与 `std::mutex` + `std::lock_guard` 的区别：Android 版可绑定线程名用于 ANR 归因、提供 `tryLock()`、配套 `android::Condition`（而非 `std::condition_variable`）。SurfaceFlinger 的 `mStateLock` 就是 `mutable Mutex mStateLock;`，`init()` 里写 `Mutex::Autolock _l(mStateLock);`（`SurfaceFlinger.cpp:629`）。
+
+> 记忆法：**看到 `sp<`/`wp<` 想「Android 引用计数，基类必是 RefBase」；看到 `Mutex::Autolock` 想「Android 的 lock_guard」**。其余语法与标准现代 C++ 完全一致。
+
+### 模块 14 练习
+
+**要求**：用 `sp<>` 重写模块 6 的练习——让 `Layer` 继承 `RefBase`，用 `sp<Layer>` 代替 `shared_ptr<Layer>`，观察 `getStrongCount()`；再用 `wp<Layer>` 打破循环引用。
+
+<details><summary>参考答案</summary>
+
+```cpp
+#include <utils/RefBase.h>
+#include <utils/StrongPointer.h>
+#include <iostream>
+
+using android::sp;
+using android::wp;
+
+class Layer : public android::RefBase {      // 必须继承 RefBase 才能被 sp<> 管理
+public:
+    int id;
+    explicit Layer(int i) : id(i) {}
+};
+
+void demo() {
+    sp<Layer> a = new Layer(1);              // count=1（sp 接管裸指针）
+    sp<Layer> b = a;                         // count=2
+    wp<Layer> w = a;                         // 弱引用，不增 count
+    std::cout << "strong=" << a->getStrongCount() << "\n";   // 2
+
+    // 循环引用场景：A 持 B、B 持 A，若都用 sp 则永远不释放
+    // 正确做法：一方持 sp、另一方持 wp，用 w.promote() 升级
+    sp<Layer> upgraded = w.promote();        // 对象还活着 → 拿到强指针
+    std::cout << "promoted=" << (upgraded != nullptr) << "\n";
+}
+```
+**涉及**：`RefBase` 基类、`sp`/`wp`、`getStrongCount()`、`promote()` 升级。
+**对照仓库**：`LayerFE : public virtual RefBase`（`LayerFE.h:31`）、`SurfaceFlinger::init()` 的 `Mutex::Autolock`（`SurfaceFlinger.cpp:629`）。
+
+</details>
 
 

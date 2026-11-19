@@ -93,7 +93,7 @@ static final byte LMK_PROCREMOVE = 2;
 `init()` 阶段 `epoll_create` 建 epoll（`lmkd.c:1936`），经 `android_get_control_socket("lmkd")` 拿到 init 预创建的 "lmkd" socket 并 `listen`（`lmkd.c:1947-1953`），监听 socket 回调用 `ctrl_connect_handler` 注册进 epoll（`lmkd.c:1960-1962`）。AMS `connect` 时 `accept` 并把数据 socket 回调设为 `ctrl_data_handler`（`lmkd.c:1019-1031`）。主循环 `mainloop()` 经 `epoll_wait` 等待（`lmkd.c:2002`/`2023`），事件到来调 `handler_info->handler`（`lmkd.c:2068`）；数据可读时 `ctrl_data_handler` → `ctrl_command_handler`（`lmkd.c:986-988`）→ 按命令码 `switch` 分发：
 
 ```940:972:system/core/lmkd/lmkd.c
-... switch (cmd) {
+switch (cmd) {
     case LMK_TARGET:      cmd_target(...);      break;  // :950
     case LMK_PROCPRIO:    cmd_procprio(...);    break;  // :955
     case LMK_PROCREMOVE:  cmd_procremove(...);  break;  // :960
